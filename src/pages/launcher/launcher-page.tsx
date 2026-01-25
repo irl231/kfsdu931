@@ -2,7 +2,7 @@ import { BackgroundImage } from "@web/components/overlay/bg-image";
 import { TopNavbar } from "@web/components/top-navbar";
 import { Webview } from "@web/components/webview";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DetailView,
   GalleryView,
@@ -41,26 +41,32 @@ export function LauncherPage() {
     isGameOpen,
   } = useBrowserTabs();
 
-  const activeGame = GAMES.find((g) => g.id === selectedGameId) ?? GAMES[0];
+  // Memoize computed value to avoid recalculation
+  const activeGame = useMemo(
+    () => GAMES.find((g) => g.id === selectedGameId) ?? GAMES[0],
+    [selectedGameId],
+  );
 
   useEffect(() => {
     window.electron.getAppName().then(setAppName);
   }, []);
 
+  // Use functional setState for stable callback references
   const handleSelectGame = useCallback((gameId: string) => {
-    setShowSettings(false);
-    setSelectedGameId(gameId);
-    setViewMode("detail");
-    setShowRightSidebar(false);
+    setShowSettings(() => false);
+    setSelectedGameId(() => gameId);
+    setViewMode(() => "detail");
+    setShowRightSidebar(() => false);
   }, []);
 
   const handleShowGallery = useCallback(() => {
-    setShowSettings(false);
-    setSelectedGameId(null);
-    setViewMode("gallery");
-    setShowRightSidebar(false);
+    setShowSettings(() => false);
+    setSelectedGameId(() => null);
+    setViewMode(() => "gallery");
+    setShowRightSidebar(() => false);
   }, []);
 
+  // Stable callback - activeGame from useMemo
   const handlePlay = useCallback(() => {
     playGame(activeGame);
   }, [playGame, activeGame]);
@@ -70,21 +76,26 @@ export function LauncherPage() {
   }, []);
 
   const handleCloseSettings = useCallback(() => {
-    setShowSettings(false);
+    setShowSettings(() => false);
   }, []);
 
   const handleOpenSettings = useCallback(() => {
-    setShowSettings(true);
+    setShowSettings(() => true);
   }, []);
 
   const isLauncherActive = activeTopTab === "launcher";
 
   return (
-    <div className="flex flex-col w-full h-screen font-sans text-app-text-primary select-none overflow-hidden relative bg-app-primary">
+    <main
+      className="flex flex-col w-full h-screen font-sans text-app-text-primary select-none overflow-hidden relative bg-app-primary"
+      role="application"
+      aria-label="Game Launcher"
+    >
       {isTabDragging && (
         <div
           className="fixed inset-0 z-[99999]"
           style={{ cursor: "grabbing" }}
+          aria-hidden="true"
         />
       )}
 
@@ -218,6 +229,6 @@ export function LauncherPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -20,5 +20,6 @@
     ["(?:cn)\\(([^\\);]*)[\\);]", "[`'\"]([^'\"`,;]*)[`'\"]"]
   ],
   "chat.useNestedAgentsMdFiles": true,
-  "chat.useAgentSkills": true
+  "chat.useAgentSkills": true,
+  "chat.agent.maxRequests": 50
 }

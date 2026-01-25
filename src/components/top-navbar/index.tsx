@@ -1,6 +1,6 @@
 import { IconSettings } from "@tabler/icons-react";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BrowserTabsList } from "../browser-tabs";
 import { TabPanel } from "../browser-tabs/tab-panel";
 import type { BrowserTab } from "../webview";
@@ -24,8 +24,12 @@ export const TopNavbar = ({
   setIsTabDragging,
 }: TopNavbarProps) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const platform = window.electron.getPlatform();
-  const isMac = !["linux", "windows"].includes(platform);
+  // Memoize platform check - only compute once
+  const platform = useMemo(() => window.electron.getPlatform(), []);
+  const isMac = useMemo(
+    () => !["linux", "windows"].includes(platform),
+    [platform],
+  );
 
   useEffect(() => {
     window.electron.isFullScreen().then(setIsFullScreen);
@@ -38,7 +42,7 @@ export const TopNavbar = ({
   }, []);
 
   return (
-    <div className="relative flex flex-col z-30">
+    <nav className="relative flex flex-col z-30" aria-label="Main navigation">
       <div
         className={`${isMac ? "h-[40px]" : "h-[33px]"} relative flex items-center pl-2 bg-app-primary`}
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
@@ -57,7 +61,9 @@ export const TopNavbar = ({
             onClick={() => {
               setActiveTopTab("launcher");
             }}
-            className={`${isMac ? "h-[32px]" : "h-[26px]"} group relative flex-shrink-0 ${activeTopTab === "launcher" ? "text-app-text-primary" : "text-app-text-primary/40 hover:text-app-accent"}`}
+            aria-label="Go to launcher home"
+            aria-pressed={activeTopTab === "launcher"}
+            className={`${isMac ? "h-[32px]" : "h-[26px]"} group relative flex-shrink-0 focus-visible:outline-2 focus-visible:outline-app-accent focus-visible:outline-offset-2 focus-visible:rounded transition-colors ${activeTopTab === "launcher" ? "text-app-text-primary" : "text-app-text-primary/40 hover:text-app-accent"}`}
           >
             <TabPanel isActive={activeTopTab === "launcher"} />
             <div
@@ -94,7 +100,9 @@ export const TopNavbar = ({
             onClick={() => {
               setActiveTopTab("launcher");
             }}
-            className={`h-[32px] w-[32px] cursor-pointer transition-colors ${activeTopTab === "launcher" ? "text-app-text-primary" : "text-app-text-primary/40 hover:text-app-accent"}`}
+            aria-label="Open settings"
+            aria-pressed={activeTopTab === "launcher"}
+            className={`h-[32px] w-[32px] cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-app-accent focus-visible:outline-offset-2 focus-visible:rounded ${activeTopTab === "launcher" ? "text-app-text-primary" : "text-app-text-primary/40 hover:text-app-accent"}`}
           >
             <div className="w-full h-full group relative flex-shrink-0  z-30 flex items-center justify-center">
               <IconSettings
@@ -108,6 +116,6 @@ export const TopNavbar = ({
         <WindowAction />
       </div>
       <div className="h-[15px] w-full rounded-t-full flex-grow bg-[#202224]"></div>
-    </div>
+    </nav>
   );
 };

@@ -46,6 +46,8 @@ export const BrowserTabsList = ({
       axis="x"
       values={tabs}
       onReorder={onReorder}
+      role="tablist"
+      aria-label="Open browser tabs"
       className="absolute inset-0 flex items-end px-2 gap-1 w-full justify-start"
     >
       <AnimatePresence initial={false}>

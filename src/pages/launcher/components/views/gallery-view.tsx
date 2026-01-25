@@ -14,6 +14,7 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(true);
 
+  // Memoize scroll handler - follows `rerender-defer-reads` pattern
   const checkGalleryScroll = useCallback(() => {
     const gallery = galleryRef.current;
     if (!gallery) return;
@@ -23,21 +24,32 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
     setShowRightFade(scrollLeft < scrollWidth - clientWidth - 20);
   }, []);
 
+  // Use passive event listener for scroll performance (WCAG 2.2)
   useEffect(() => {
     const gallery = galleryRef.current;
-    if (gallery) {
-      gallery.scrollTo({ left: 0, behavior: "instant" });
-      setTimeout(checkGalleryScroll, 100);
-    }
+    if (!gallery) return;
+
+    gallery.scrollTo({ left: 0, behavior: "instant" });
+
+    const timeoutId = setTimeout(checkGalleryScroll, 100);
+
+    // Add passive scroll listener for better performance
+    gallery.addEventListener("scroll", checkGalleryScroll, { passive: true });
+
+    return () => {
+      clearTimeout(timeoutId);
+      gallery.removeEventListener("scroll", checkGalleryScroll);
+    };
   }, [checkGalleryScroll]);
 
   return (
-    <motion.div
+    <motion.section
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
       className="absolute inset-0 flex"
+      aria-label="Game gallery"
     >
       <div className="flex-1 relative flex flex-col">
         <div className="flex-1 relative overflow-hidden w-full group">
@@ -93,8 +105,9 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
 
           <div
             ref={galleryRef}
-            onScroll={checkGalleryScroll}
             className="flex gap-4 overflow-x-auto snap-x snap-mandatory px-10 no-scrollbar scroll-pl-10 w-full pb-10"
+            role="list"
+            aria-label="Available games"
           >
             {GAMES.map((game, index) => (
               <GalleryCard
@@ -108,6 +121,6 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </motion.section>
   );
 }

@@ -22,6 +22,12 @@
     --text-secondary: #dfe2ea;
     --text-tertiary: #ffffff;
   }
+
+  /* Optimize font rendering */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
 body {
@@ -42,15 +48,36 @@ body {
     Segoe UI Emoji,
     Segoe UI Symbol,
     Noto Color Emoji;
-}
-
-body {
   color: var(--text-primary);
   background: var(--bg-primary);
+  /* Optimize repaints */
+  transform: translateZ(0);
+  will-change: auto;
 }
 
-button[type="button"]:focus {
+/* Remove outline for mouse users, but keep for keyboard users */
+button[type="button"]:focus:not(:focus-visible) {
   outline: none;
+}
+
+/* Enhanced focus styles for keyboard navigation (WCAG 2.2) */
+button[type="button"]:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Custom focus ring for interactive elements */
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -79,4 +106,42 @@ button[type="button"]:focus {
   user-select: none;
   -webkit-app-region: drag;
   overflow: hidden;
+}
+
+/* Utility classes for performance optimization */
+@layer utilities {
+  /* GPU acceleration for smooth animations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* Optimize image rendering */
+  .optimized-img {
+    image-rendering: crisp-edges;
+  }
+
+  /* Prevent layout shift */
+  .prevent-shift {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
+  }
+
+  /* Smooth scroll for better UX */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+  }
+
+  /* Reduce motion for accessibility (WCAG 2.2) */
+  /* Important flags are necessary here to override animations for users with motion sensitivity */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+      transition-duration: 0.01ms;
+      scroll-behavior: auto;
+    }
+  }
 }
