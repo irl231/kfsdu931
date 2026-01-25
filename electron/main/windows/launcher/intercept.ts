@@ -172,7 +172,7 @@ const openExternalAndCloseTab = async (
         return;
       }
 
-      const senderUrl = (event as any).webContents?._getURL?.()?.replace?.(/\/$/, "") || "";
+      const senderUrl = (event as any).sender._getURL().replace(/\/$/, "");
       const reqUrl = safeParseUrl(url);
       const parsedSenderUrl = safeParseUrl(senderUrl);
 
@@ -208,7 +208,7 @@ const openExternalAndCloseTab = async (
       // Check whitelist
       if (reqTld.domain && !isDomainWhitelisted(reqTld.domain)) {
         if (!(isSenderFromFile || isSenderFromLocal)) {
-          log.debug(`[Intercept] Blocked new-window to: ${url}`);
+          log.debug(`[Intercept] Blocked new-window to: ${url}`, parsedSenderUrl);
           return;
         }
       }

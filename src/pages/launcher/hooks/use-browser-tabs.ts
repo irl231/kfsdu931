@@ -69,35 +69,52 @@ export function useBrowserTabs() {
     if (!window.electron) return;
 
     const unlisten = window.electron.onWebViewOpenExternal((url, senderUrl) => {
-      setExternalUrls((prev) => [...prev, url]);
+      try {
+        setExternalUrls((prev) => [...prev, url]);
 
-      const parsedUrl = new URL(url.replace(/\/$/, ""));
-      const parsedSenderUrl = new URL(senderUrl.replace(/\/$/, ""));
-      const senderTld = parse(parsedSenderUrl.hostname);
+        const parsedUrl = new URL(url.replace(/\/$/, ""));
 
-      const referenceTab = browserTabs.find((x) => {
-        const parsedPrevUrl = new URL(x.url.replace(/\/$/, ""));
-        const prevTld = parse(parsedPrevUrl.hostname);
-        return (
-          prevTld.domain === senderTld.domain && !x.id.startsWith("external")
-        );
-      });
+        // Handle empty or invalid sender URL
+        let parsedSenderUrl: URL | null = null;
+        let senderTld: ReturnType<typeof parse> | null = null;
 
-      // Use game lookup utility for O(1) lookup
-      const game = findGameByUrl(parsedUrl.href);
-      const accent = referenceTab?.accent || game?.accent || "#ffffff";
+        if (senderUrl?.trim()) {
+          try {
+            parsedSenderUrl = new URL(senderUrl.replace(/\/$/, ""));
+            senderTld = parse(parsedSenderUrl.hostname);
+          } catch (_error) {
+            console.warn("[BrowserTabs] Invalid sender URL:", senderUrl);
+          }
+        }
 
-      const refId = referenceTab?.id || "unknown";
-      const newTab: BrowserTab = {
-        url: parsedUrl.href,
-        accent,
-        createdAt: Date.now(),
-        title: "Loading...",
-        id: `external-${refId}-${externalUrls.length + 1}`,
-      };
+        const referenceTab = senderTld
+          ? browserTabs.find((x) => {
+              const parsedPrevUrl = new URL(x.url.replace(/\/$/, ""));
+              const prevTld = parse(parsedPrevUrl.hostname);
+              return (
+                prevTld.domain === senderTld.domain && !x.id.startsWith("external")
+              );
+            })
+          : undefined;
 
-      setBrowserTabs((prev) => [...prev, newTab]);
-      setActiveTopTab(newTab.id);
+        // Use game lookup utility for O(1) lookup
+        const game = findGameByUrl(parsedUrl.href);
+        const accent = referenceTab?.accent || game?.accent || "#ffffff";
+
+        const refId = referenceTab?.id || "unknown";
+        const newTab: BrowserTab = {
+          url: parsedUrl.href,
+          accent,
+          createdAt: Date.now(),
+          title: "Loading...",
+          id: `external-${refId}-${externalUrls.length + 1}`,
+        };
+
+        setBrowserTabs((prev) => [...prev, newTab]);
+        setActiveTopTab(newTab.id);
+      } catch (error) {
+        console.error("[BrowserTabs] Error handling external URL:", error);
+      }
     });
 
     return unlisten;
