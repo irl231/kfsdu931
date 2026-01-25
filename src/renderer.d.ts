@@ -38,7 +38,7 @@ interface ElectronAPI {
   onWebViewOpenExternal: (
     cb: (url: string, senderUrl: string) => void,
   ) => VoidFunction;
-  onWebViewCloseExternal: (cb: (tabId: number) => void) => VoidFunction;
+  onWebViewCloseExternal: (cb: (senderUrl: string) => void) => VoidFunction;
   onDiscordRPCUpdate: (richPresenceOrUrl: Record<string, any> | string) => void;
   onDiscordRPCDestroy: (hostname?: string) => void;
   openExternal: (url: string) => Promise<void>;

@@ -5,7 +5,9 @@ import { channel } from "./channel";
 
 export function registerWindowHandlers() {
   // Helper function to get window with error handling
-  const getWindow = (event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): BrowserWindow | null => {
+  const getWindow = (
+    event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent,
+  ): BrowserWindow | null => {
     try {
       return BrowserWindow.fromWebContents(event.sender);
     } catch (error) {

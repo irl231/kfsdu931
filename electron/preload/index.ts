@@ -87,12 +87,16 @@ const api: ElectronAPI = {
       );
     };
   },
-  onWebViewCloseExternal: (cb: (tabId: number) => void) => {
+  onWebViewCloseExternal: (cb: (senderUrl: string) => void) => {
     const closeExternalHandler = (
       _event: IpcRendererEvent,
-      tabId: number,
+      senderUrl: string,
     ) => {
-      cb(tabId);
+      console.log(
+        "[Preload] onWebViewCloseExternal received senderUrl:",
+        senderUrl,
+      );
+      cb(senderUrl);
     };
     ipcRenderer.on(channel.webview.closeExternal, closeExternalHandler);
 

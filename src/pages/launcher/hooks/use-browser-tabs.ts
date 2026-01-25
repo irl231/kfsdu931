@@ -11,6 +11,7 @@ export function useBrowserTabs() {
   const [activeTopTab, setActiveTopTab] = useState("launcher");
 
   const tabHistoryRef = useRef<string[]>(["launcher"]);
+  const webContentsMapRef = useRef<Map<number, string>>(new Map());
 
   // Optimize sorting: only sort when browserTabs changes
   const stableTabs = useMemo(
@@ -92,7 +93,8 @@ export function useBrowserTabs() {
               const parsedPrevUrl = new URL(x.url.replace(/\/$/, ""));
               const prevTld = parse(parsedPrevUrl.hostname);
               return (
-                prevTld.domain === senderTld.domain && !x.id.startsWith("external")
+                prevTld.domain === senderTld.domain &&
+                !x.id.startsWith("external")
               );
             })
           : undefined;
@@ -124,7 +126,7 @@ export function useBrowserTabs() {
   useEffect(() => {
     if (!window.electron) return;
 
-    const unlisten = window.electron.onWebViewSWFReady((url) => {
+    const unlisten = window.electron.onWebViewSWFReady((url, id) => {
       const parsedUrl = new URL(url.replace(/\/$/, ""));
       const tld = parse(parsedUrl.hostname);
 
@@ -147,6 +149,11 @@ export function useBrowserTabs() {
           parsedPrevUrl.pathname === parsedUrl.pathname
         );
       });
+
+      // Store mapping of webContents ID to browser tab ID for social link closures
+      if (loadedTab) {
+        webContentsMapRef.current.set(id, loadedTab.id);
+      }
 
       if (loadedTab) setActiveTopTab(loadedTab.id);
     });
@@ -222,11 +229,25 @@ export function useBrowserTabs() {
     );
   }, []);
 
-  const updateTabUrl = useCallback((tabId: string, newUrl: string) => {
-    setBrowserTabs((prev) =>
-      prev.map((t) => (t.id === tabId ? { ...t, url: newUrl } : t)),
-    );
-  }, []);
+  const updateTabUrl = useCallback(
+    (tabId: string, newUrl: string) => {
+      // Close tab if URL becomes about:blank (window closed or redirected away)
+      if (newUrl === "about:blank") {
+        setBrowserTabs((prev) => prev.filter((t) => t.id !== tabId));
+
+        // Switch to another tab if the closed tab was active
+        if (activeTopTab === tabId) {
+          setActiveTopTab("launcher");
+        }
+        return;
+      }
+
+      setBrowserTabs((prev) =>
+        prev.map((t) => (t.id === tabId ? { ...t, url: newUrl } : t)),
+      );
+    },
+    [activeTopTab],
+  );
 
   const isGameLoading = useCallback(
     (gameUrl: string) => loadingUrlsSet.has(gameUrl),
@@ -242,19 +263,47 @@ export function useBrowserTabs() {
   useEffect(() => {
     if (!window.electron) return;
 
-    const unlisten = window.electron.onWebViewCloseExternal((_tabId) => {
-      // The tabId passed from main process is the webview's content ID
-      // We need to close any tab that was initiated from that webview
-      // For now, close the most recent external tab as a heuristic
-      const externalTabs = stableTabs.filter((tab) => tab.id.startsWith("external"));
-      if (externalTabs.length > 0) {
-        // Close the most recent external tab (last one opened)
-        closeTab(null, externalTabs[externalTabs.length - 1].id);
+    const unlisten = window.electron.onWebViewCloseExternal((senderUrl) => {
+      console.log(
+        "[BrowserTabs] Close external triggered for senderUrl:",
+        senderUrl,
+      );
+
+      // Find the tab that matches the sender URL
+      let tabToClose: string | null = null;
+
+      for (const tab of browserTabs) {
+        if (tab.url === senderUrl || tab.url.startsWith(senderUrl)) {
+          tabToClose = tab.id;
+          console.log(
+            "[BrowserTabs] Found matching tab:",
+            tabToClose,
+            "for URL:",
+            senderUrl,
+          );
+          break;
+        }
+      }
+
+      // Fallback: close the most recent external tab if no exact match found
+      if (!tabToClose) {
+        console.log("[BrowserTabs] No exact match found, using fallback");
+        const externalTabs = stableTabs.filter((tab) =>
+          tab.id.startsWith("external"),
+        );
+        if (externalTabs.length > 0) {
+          tabToClose = externalTabs[externalTabs.length - 1].id;
+          console.log("[BrowserTabs] Closing fallback tab:", tabToClose);
+        }
+      }
+
+      if (tabToClose) {
+        closeTab(null, tabToClose);
       }
     });
 
     return unlisten;
-  }, [stableTabs, closeTab]);
+  }, [browserTabs, stableTabs, closeTab]);
 
   return {
     browserTabs,

@@ -1,6 +1,6 @@
 import "../polyfills/event";
-import { cleanupDiscordRPC } from "@electron/ipc/discord-rpc";
 import { registerIpcHandlers } from "@electron/ipc";
+import { cleanupDiscordRPC } from "@electron/ipc/discord-rpc";
 import { appSettingsStore, storeKey } from "@electron/store";
 import { app, type BrowserWindow } from "electron";
 import log from "electron-log";

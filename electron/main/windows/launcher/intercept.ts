@@ -37,7 +37,7 @@ const gameIdsCache = new Set(
     const url = new URL(x.url.game.replace(/\/$/, ""));
     const tld = parseTLD(url.hostname);
     return `${tld.domain}-${url.pathname}`;
-  })
+  }),
 );
 
 // Helper: Safe URL parsing with error handling
@@ -106,32 +106,43 @@ export function handleWebRequestInterceptors(
     }
   };
 
-// Helper: Open external URL safely and close the initiating tab
-const openExternalAndCloseTab = async (
-  url: string,
-  reason: string,
-  tabIdToClose?: number,
-): Promise<void> => {
-  try {
-    log.info(`[Intercept] ${reason}: ${url}`);
-    await shell.openExternal(url, { activate: true });
+  // Helper: Open external URL safely and close the initiating tab
+  const openExternalAndCloseTab = async (
+    url: string,
+    reason: string,
+    senderUrlForClose?: string,
+  ): Promise<void> => {
+    try {
+      log.info(`[Intercept] ${reason}: ${url}`);
+      await shell.openExternal(url, { activate: true });
 
-    // Close the tab that initiated the external navigation
-    if (tabIdToClose !== undefined) {
-      const mainWindow = BrowserWindow.getAllWindows()[0];
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        // Send close signal with a small delay to ensure external app opens first
-        setTimeout(() => {
-          if (!mainWindow.isDestroyed()) {
-            mainWindow.webContents.send(channel.webview.closeExternal, tabIdToClose);
-          }
-        }, 100);
+      // Send close signal with sender URL for identification
+      if (senderUrlForClose) {
+        log.info(
+          `[Intercept] Sending close signal for sender: ${senderUrlForClose}`,
+        );
+        const mainWindow = BrowserWindow.getAllWindows()[0];
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          // Send close signal with a small delay to ensure external app opens first
+          setTimeout(() => {
+            if (!mainWindow.isDestroyed()) {
+              log.info(`[Intercept] Sending closeExternal IPC message`);
+              mainWindow.webContents.send(
+                channel.webview.closeExternal,
+                senderUrlForClose,
+              );
+            }
+          }, 100);
+        } else {
+          log.warn(`[Intercept] Main window not available for close signal`);
+        }
+      } else {
+        log.debug(`[Intercept] No sender URL provided for closing`);
       }
+    } catch (error) {
+      log.error(`[Intercept] Error opening external URL:`, error);
     }
-  } catch (error) {
-    log.error(`[Intercept] Error opening external URL:`, error);
-  }
-};
+  };
 
   const onWillHandler =
     (eventName: string) => (event: WillNavigateEvent, url: string) => {
@@ -146,9 +157,13 @@ const openExternalAndCloseTab = async (
 
         if (reqTld.domain && isSocialDomain(reqTld.domain)) {
           event.preventDefault();
-          // Get the webview ID from the event casted to any
-          const tabId = (event as any).webContents?.id;
-          openExternalAndCloseTab(url, "Opening social link in external browser", tabId);
+          // Get the sender URL to identify which tab initiated this
+          const senderUrl = (event as any).sender?._getURL?.();
+          openExternalAndCloseTab(
+            url,
+            "Opening social link in external browser",
+            senderUrl,
+          );
           return;
         }
 
@@ -182,7 +197,9 @@ const openExternalAndCloseTab = async (
       }
 
       if (!parsedSenderUrl && senderUrl) {
-        log.warn(`[Intercept] Invalid sender URL in new-window handler: ${senderUrl}`);
+        log.warn(
+          `[Intercept] Invalid sender URL in new-window handler: ${senderUrl}`,
+        );
         return;
       }
 
@@ -200,15 +217,21 @@ const openExternalAndCloseTab = async (
 
       // Handle social media links
       if (reqTld.domain && isSocialDomain(reqTld.domain)) {
-        const tabId = (event as any).webContents?.id;
-        openExternalAndCloseTab(url, "Opening social link in external browser", tabId);
+        openExternalAndCloseTab(
+          url,
+          "Opening social link in external browser",
+          senderUrl,
+        );
         return;
       }
 
       // Check whitelist
       if (reqTld.domain && !isDomainWhitelisted(reqTld.domain)) {
         if (!(isSenderFromFile || isSenderFromLocal)) {
-          log.debug(`[Intercept] Blocked new-window to: ${url}`, parsedSenderUrl);
+          log.debug(
+            `[Intercept] Blocked new-window to: ${url}`,
+            parsedSenderUrl,
+          );
           return;
         }
       }
@@ -239,7 +262,9 @@ const openExternalAndCloseTab = async (
 
   webContents.on("did-attach-webview", (_event, web) => {
     try {
-      const webviewUrl = safeParseUrl((web as any)._getURL?.()?.replace?.(/\/$/, "") || "");
+      const webviewUrl = safeParseUrl(
+        (web as any)._getURL?.()?.replace?.(/\/$/, "") || "",
+      );
       if (!webviewUrl) return;
 
       const webviewTld = parseTLD(webviewUrl.hostname);
@@ -304,7 +329,10 @@ const openExternalAndCloseTab = async (
               contents
                 .executeJavaScript(getSWFInjectionScript())
                 .then(() => {
-                  if (contents.hostWebContents && !contents.hostWebContents.isDestroyed()) {
+                  if (
+                    contents.hostWebContents &&
+                    !contents.hostWebContents.isDestroyed()
+                  ) {
                     contents.hostWebContents.send(
                       channel.webview.swfReady,
                       webviewUrl.href,

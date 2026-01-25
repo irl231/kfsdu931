@@ -137,7 +137,10 @@ export function registerDiscordRPCHandlers() {
           }
         } else {
           if (!richPresenceOrUrl.url || !isValidUrl(richPresenceOrUrl.url)) {
-            log.warn("[Discord RPC] Invalid presence URL:", richPresenceOrUrl.url);
+            log.warn(
+              "[Discord RPC] Invalid presence URL:",
+              richPresenceOrUrl.url,
+            );
             return;
           }
 
@@ -218,7 +221,10 @@ export function registerDiscordRPCHandlers() {
       const tld = parseTLD(parsedUrl.hostname);
 
       if (!tld.domain) {
-        log.warn("[Discord RPC] Invalid domain for destroy:", parsedUrl.hostname);
+        log.warn(
+          "[Discord RPC] Invalid domain for destroy:",
+          parsedUrl.hostname,
+        );
         return;
       }
 
