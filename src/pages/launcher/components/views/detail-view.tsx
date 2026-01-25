@@ -120,11 +120,13 @@ function DetailViewComponent({
               <ToolBtn
                 icon={<IconWorld size={18} />}
                 tooltip="Site"
+                ariaLabel="Visit official website"
                 href={game.url.home}
               />
               <ToolBtn
                 icon={<IconShare size={18} />}
                 tooltip="Social Info"
+                ariaLabel="View social information"
                 onClick={onToggleSidebar}
               />
             </div>

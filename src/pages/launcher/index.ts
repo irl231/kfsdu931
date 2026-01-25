@@ -4,7 +4,6 @@ export {
   GalleryView,
   LeftSidebar,
   RightSidebar,
-  SettingsModal,
   SidebarGameItem,
   ToolBtn,
 } from "./components";

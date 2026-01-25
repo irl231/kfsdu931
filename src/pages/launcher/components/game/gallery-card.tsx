@@ -1,6 +1,6 @@
 import { isImageLoaded, preloadImage } from "@web/utils";
 import { motion } from "motion/react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import type { Game } from "../../constants";
 
 interface GalleryCardProps {
@@ -32,8 +32,6 @@ function GalleryCardComponent({ game, onClick, index }: GalleryCardProps) {
     });
   }, [game.image.background]);
 
-  const handleClick = useMemo(() => onClick, [onClick]);
-
   return (
     <motion.button
       type="button"
@@ -45,7 +43,7 @@ function GalleryCardComponent({ game, onClick, index }: GalleryCardProps) {
         delay: index * 0.08,
         ease: [0.25, 0.4, 0.25, 1],
       }}
-      onClick={handleClick}
+      onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       className="snap-start flex-shrink-0 md:w-[calc(33.33%-11px)] xl:w-[calc(25%-12px)] aspect-[7/4] relative rounded-xl overflow-hidden cursor-pointer shadow-lg bg-app-secondary outline-none group transition-colors text-left"

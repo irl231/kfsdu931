@@ -59,6 +59,42 @@ function isSocialDomain(domain: string | undefined): boolean {
   return domain ? SOCIAL_DOMAINS.has(domain) : false;
 }
 
+// Helper: Check if a URL is an embedded widget/plugin (not a direct site navigation)
+function isEmbeddedContent(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    const pathname = urlObj.pathname.toLowerCase();
+
+    // Facebook embedded content paths
+    if (hostname.includes("facebook.com")) {
+      return (
+        pathname.includes("/plugins/") ||
+        pathname.includes("/en_us/sdk.js") ||
+        pathname.includes("/connect/") ||
+        pathname.includes("/platform/")
+      );
+    }
+
+    // Twitter embedded content
+    if (
+      hostname.includes("twitter.com") ||
+      hostname.includes("x.com") ||
+      hostname.includes("t.co")
+    ) {
+      return (
+        pathname.includes("/i/web/status") || // embedded tweet
+        pathname.includes("/widgets/") ||
+        hostname === "t.co" // twitter shortlinks stay embedded
+      );
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function handleWebRequestInterceptors(
   windowOrwebContents: BrowserWindow | WebContents,
   domains: string[] = [],
@@ -155,6 +191,12 @@ export function handleWebRequestInterceptors(
 
         const reqTld = parseTLD(reqUrl.hostname);
 
+        // Allow embedded content (iframes, widgets, etc) regardless of whitelist
+        if (isEmbeddedContent(url)) {
+          return;
+        }
+
+        // Check if it's a social domain (not embedded)
         if (reqTld.domain && isSocialDomain(reqTld.domain)) {
           event.preventDefault();
           // Get the sender URL to identify which tab initiated this
@@ -215,8 +257,12 @@ export function handleWebRequestInterceptors(
         return;
       }
 
-      // Handle social media links
-      if (reqTld.domain && isSocialDomain(reqTld.domain)) {
+      // Handle social media links - but skip embedded content
+      if (
+        reqTld.domain &&
+        isSocialDomain(reqTld.domain) &&
+        !isEmbeddedContent(url)
+      ) {
         openExternalAndCloseTab(
           url,
           "Opening social link in external browser",

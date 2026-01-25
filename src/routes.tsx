@@ -6,7 +6,8 @@ import { NotFoundPage } from "./pages/error/not-found";
 import { LauncherPage } from "./pages/launcher";
 import { SplashPage } from "./pages/splash";
 
-const isElectron = "electron" in window;
+// Cache electron check to avoid re-evaluation on every render
+const IS_ELECTRON = "electron" in window;
 const routes: RouteObject[] = [
   {
     path: "/splash",
@@ -18,7 +19,7 @@ const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: isElectron ? <LauncherPage /> : <NotElectronPage />,
+        element: IS_ELECTRON ? <LauncherPage /> : <NotElectronPage />,
       },
     ],
   },

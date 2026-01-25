@@ -29,6 +29,53 @@ const isSocialDomain = (url: string): boolean => {
   }
 };
 
+// Check if a URL is an embedded widget/plugin (not a direct site navigation)
+const isEmbeddedContent = (url: string): boolean => {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    const pathname = urlObj.pathname.toLowerCase();
+
+    // Facebook embedded content paths
+    if (hostname.includes("facebook.com")) {
+      return (
+        pathname.includes("/plugins/") ||
+        pathname.includes("/en_us/sdk.js") ||
+        pathname.includes("/connect/") ||
+        pathname.includes("/platform/")
+      );
+    }
+
+    // Twitter embedded content
+    if (
+      hostname.includes("twitter.com") ||
+      hostname.includes("x.com") ||
+      hostname.includes("t.co")
+    ) {
+      return (
+        pathname.includes("/i/web/status") || // embedded tweet
+        pathname.includes("/widgets/") ||
+        hostname === "t.co" // twitter shortlinks stay embedded
+      );
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+};
+
+// Check if navigation should trigger external open (user clicking a social link)
+const shouldOpenExternal = (url: string, senderUrl?: string): boolean => {
+  // If it's embedded content, don't open externally
+  if (isEmbeddedContent(url)) {
+    return false;
+  }
+
+  // Only open externally if it's a social domain and not from an external source
+  return isSocialDomain(url) && (!senderUrl || !isSocialDomain(senderUrl));
+};
+
 export interface BrowserTab {
   id: string;
   url: string;
@@ -97,7 +144,7 @@ export const Webview = ({
 
   // check if initial URL is a social domain and close tab immediately
   useEffect(() => {
-    if (isSocialDomain(tab.url)) {
+    if (isSocialDomain(tab.url) && !isEmbeddedContent(tab.url)) {
       window.electron?.openExternal(tab.url);
       onClose?.(tab.id);
     }
@@ -120,7 +167,7 @@ export const Webview = ({
     if (!webview) return;
 
     // skip setting up webview if it's a social domain (will be closed)
-    if (isSocialDomain(tab.url)) return;
+    if (isSocialDomain(tab.url) && !isEmbeddedContent(tab.url)) return;
 
     const handleTitleUpdated = (e: any) => {
       onTitleUpdate(tab.id, e.title);
@@ -175,9 +222,11 @@ export const Webview = ({
     };
 
     // close tab when navigating to social media domains (external link handled by main process)
+    // but allow embedded content like Facebook widgets or Twitter embeds
     const handleWillNavigate = (e: any) => {
-      const url = e.url;
-      if (isSocialDomain(url)) {
+      const { url, isMainFrame } = e;
+      // Only close tab for main frame navigation to social domains, not iframe embeds
+      if (isMainFrame && shouldOpenExternal(url)) {
         onClose?.(tab.id);
       }
     };

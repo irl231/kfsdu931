@@ -2,16 +2,29 @@ import { BackgroundImage } from "@web/components/overlay/bg-image";
 import { TopNavbar } from "@web/components/top-navbar";
 import { Webview } from "@web/components/webview";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   DetailView,
   GalleryView,
   LeftSidebar,
   RightSidebar,
-  SettingsModal,
 } from "./components";
 import { GAMES } from "./constants";
 import { useBrowserTabs } from "./hooks";
+
+// Lazy load SettingsModal to reduce initial bundle
+const SettingsModal = lazy(() =>
+  import("./components/settings/settings-modal").then((mod) => ({
+    default: mod.SettingsModal,
+  })),
+);
 
 declare module "react" {
   interface CSSProperties {
@@ -48,22 +61,29 @@ export function LauncherPage() {
   );
 
   useEffect(() => {
-    window.electron.getAppName().then(setAppName);
+    // Fetch app name once and prevent state updates after unmount
+    let mounted = true;
+    window.electron.getAppName().then((name) => {
+      if (mounted) setAppName(name);
+    });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // Use functional setState for stable callback references
+  // Stable callbacks for state updates
   const handleSelectGame = useCallback((gameId: string) => {
-    setShowSettings(() => false);
-    setSelectedGameId(() => gameId);
-    setViewMode(() => "detail");
-    setShowRightSidebar(() => false);
+    setShowSettings(false);
+    setSelectedGameId(gameId);
+    setViewMode("detail");
+    setShowRightSidebar(false);
   }, []);
 
   const handleShowGallery = useCallback(() => {
-    setShowSettings(() => false);
-    setSelectedGameId(() => null);
-    setViewMode(() => "gallery");
-    setShowRightSidebar(() => false);
+    setShowSettings(false);
+    setSelectedGameId(null);
+    setViewMode("gallery");
+    setShowRightSidebar(false);
   }, []);
 
   // Stable callback - activeGame from useMemo
@@ -76,11 +96,11 @@ export function LauncherPage() {
   }, []);
 
   const handleCloseSettings = useCallback(() => {
-    setShowSettings(() => false);
+    setShowSettings(false);
   }, []);
 
   const handleOpenSettings = useCallback(() => {
-    setShowSettings(() => true);
+    setShowSettings(true);
   }, []);
 
   const isLauncherActive = activeTopTab === "launcher";
@@ -116,10 +136,12 @@ export function LauncherPage() {
             <div className="relative h-full w-full border border-white/5 overflow-hidden rounded-2xl">
               <AnimatePresence>
                 {showSettings && (
-                  <SettingsModal
-                    isOpen={showSettings}
-                    onClose={handleCloseSettings}
-                  />
+                  <Suspense fallback={null}>
+                    <SettingsModal
+                      isOpen={showSettings}
+                      onClose={handleCloseSettings}
+                    />
+                  </Suspense>
                 )}
               </AnimatePresence>
 

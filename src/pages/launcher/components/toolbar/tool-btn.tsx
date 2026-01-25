@@ -4,11 +4,18 @@ import { memo, useCallback } from "react";
 interface ToolBtnProps {
   icon: ReactNode;
   tooltip?: string;
+  ariaLabel?: string;
   href?: string;
   onClick?: () => void;
 }
 
-function ToolBtnComponent({ icon, tooltip, href, onClick }: ToolBtnProps) {
+function ToolBtnComponent({
+  icon,
+  tooltip,
+  ariaLabel,
+  href,
+  onClick,
+}: ToolBtnProps) {
   const handleClick = useCallback(() => {
     onClick?.();
     if (href) window.open(href, "_blank");
@@ -22,7 +29,7 @@ function ToolBtnComponent({ icon, tooltip, href, onClick }: ToolBtnProps) {
       type="button"
       className={`w-12 h-12 rounded-full border backdrop-blur-md flex items-center justify-center transition-all group relative outline-none ring-0 focus-visible:ring-2 focus-visible:ring-app-accent ${baseClass}`}
       onClick={handleClick}
-      aria-label={tooltip}
+      aria-label={ariaLabel || tooltip}
       title={tooltip}
     >
       {icon}

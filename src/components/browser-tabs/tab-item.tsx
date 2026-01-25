@@ -11,7 +11,7 @@ export const TabItem = ({
   tab: { id: string; title: string; accent: string };
   isActive: boolean;
   onClick: () => void;
-  onClose: (e: any) => void;
+  onClose: (e: React.MouseEvent) => void;
 }) => {
   // Memoize platform check
   const platform = useMemo(() => window.electron.getPlatform(), []);

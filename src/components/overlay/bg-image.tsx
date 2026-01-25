@@ -5,11 +5,32 @@ export const BackgroundImage: React.FC<{ src: string }> = ({ src }) => {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setLoaded(false);
-    if (!src) return;
-    const img = new Image();
+    if (!src) {
+      setLoaded(false);
+      return;
+    }
+
+    // Check if image is already in cache
+    const img = new window.Image();
     img.src = src;
-    img.onload = () => setLoaded(true);
+
+    // Use onload with a timeout fallback for cached images
+    let mounted = true;
+    const handleLoad = () => {
+      if (mounted) setLoaded(true);
+    };
+
+    if (img.complete) {
+      // Image is cached, load immediately
+      if (mounted) setLoaded(true);
+    } else {
+      img.addEventListener("load", handleLoad, { once: true });
+    }
+
+    return () => {
+      mounted = false;
+      img.removeEventListener("load", handleLoad);
+    };
   }, [src]);
 
   return (

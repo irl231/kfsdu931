@@ -38,13 +38,20 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   }, [isOpen]);
 
   useEffect(() => {
+    // Fetch app info only once on mount, not when modal opens/closes
+    let mounted = true;
     Promise.all([
       window.electron.getAppVersion(),
       window.electron.getAppName(),
     ]).then(([version, name]) => {
-      setAppVersion(version);
-      setAppName(name);
+      if (mounted) {
+        setAppVersion(version);
+        setAppName(name);
+      }
     });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const toggleMinimizeToTray = useCallback(async (val: boolean) => {
