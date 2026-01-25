@@ -46,6 +46,7 @@ app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 
 process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
 let mainWin: BrowserWindow | null = null;
+let isCleaningUp = false;
 
 // Register handlers early
 try {
@@ -85,24 +86,29 @@ app.whenReady().then(async () => {
 // Graceful shutdown handling
 app
   .on("before-quit", async (event) => {
+    // Prevent infinite loop by checking if we're already cleaning up
+    if (isCleaningUp) {
+      log.info("[Main] Cleanup already in progress, allowing quit");
+      return;
+    }
+
     log.info("[Main] App shutting down...");
     setQuitting(true);
+    isCleaningUp = true;
 
     // Prevent immediate quit to allow cleanup
-    if (mainWin && !mainWin.isDestroyed()) {
-      event.preventDefault();
+    event.preventDefault();
 
-      try {
-        // Clean up Discord RPC
-        await cleanupDiscordRPC();
-        log.info("[Main] Discord RPC cleaned up");
-      } catch (error) {
-        log.error("[Main] Error cleaning up Discord RPC:", error);
-      }
-
-      // Now quit for real
-      setTimeout(() => app.quit(), 100);
+    try {
+      // Clean up Discord RPC
+      await cleanupDiscordRPC();
+      log.info("[Main] Discord RPC cleaned up");
+    } catch (error) {
+      log.error("[Main] Error cleaning up Discord RPC:", error);
     }
+
+    // Now quit for real
+    app.quit();
   })
   .on("will-quit", () => {
     if (IS_DEV) {
@@ -125,6 +131,26 @@ app
     } catch (error) {
       log.error("[Main] Error in window-all-closed:", error);
       app.quit();
+    }
+  })
+  .on("activate", () => {
+    // Restore window when app icon is clicked (macOS/Windows)
+    if (mainWin) {
+      if (mainWin.isDestroyed()) {
+        log.warn("[Main] Main window destroyed, cannot restore");
+        return;
+      }
+
+      if (mainWin.isMinimized()) {
+        mainWin.restore();
+      }
+
+      if (!mainWin.isVisible()) {
+        mainWin.show();
+      }
+
+      mainWin.focus();
+      log.info("[Main] Window restored via activate event");
     }
   });
 
