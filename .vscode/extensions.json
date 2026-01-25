@@ -1,3 +1,8 @@
 {
-  "recommendations": ["biomejs.biome", "bradlc.vscode-tailwindcss"]
+  "recommendations": [
+    "biomejs.biome",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-websearchforcopilot",
+    "malaksedarous.copilot-context-optimizer"
+  ]
 }
