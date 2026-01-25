@@ -1,0 +1,63 @@
+#!/bin/bash
+# Game Launcher PKG Post-installation Script
+
+set -e
+
+# Ensure this matches the actual executable name (e.g. "GameLauncher" vs "Game Launcher")
+# If your executable has spaces, keep them here.
+PRODUCT_NAME="Game Launcher"
+INSTALL_PATH="/Applications"
+APP_PATH="$INSTALL_PATH/$PRODUCT_NAME.app"
+LOG_FILE="/tmp/GameLauncher-postinstall.log"
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [POSTINSTALL] $1" | tee -a "$LOG_FILE"
+}
+
+log "Starting Game Launcher post-installation..."
+
+# Verify installation
+if [[ ! -d "$APP_PATH" ]]; then
+    log "ERROR: Application not found at $APP_PATH"
+    exit 1
+fi
+
+# 1. Set Ownership (Standard for Applications)
+chown -R root:admin "$APP_PATH"
+
+# 2. Define list of paths requiring executable permissions (Matches TS reference)
+# These paths are relative to the .app bundle root
+EXECUTABLES=(
+    "Contents/MacOS/${PRODUCT_NAME}"
+    "Contents/Frameworks/Electron Framework.framework/Electron Framework"
+    "Contents/Frameworks/${PRODUCT_NAME} Helper.app/Contents/MacOS/${PRODUCT_NAME} Helper"
+    "Contents/Frameworks/${PRODUCT_NAME} Helper (GPU).app/Contents/MacOS/${PRODUCT_NAME} Helper (GPU)"
+    "Contents/Frameworks/${PRODUCT_NAME} Helper (Plugin).app/Contents/MacOS/${PRODUCT_NAME} Helper (Plugin)"
+    "Contents/Frameworks/${PRODUCT_NAME} Helper (Renderer).app/Contents/MacOS/${PRODUCT_NAME} Helper (Renderer)"
+)
+
+# 3. Apply chmod 755 to specific executables
+log "Applying executable permissions..."
+for REL_PATH in "${EXECUTABLES[@]}"; do
+    FILE_PATH="$APP_PATH/$REL_PATH"
+    
+    if [ -f "$FILE_PATH" ]; then
+        chmod 755 "$FILE_PATH"
+    else
+        log "WARN: Could not chmod ${REL_PATH} (File not found)"
+    fi
+done
+
+# 4. Remove quarantine attribute recursively (Matches TS: xattr -rd)
+# The 'r' flag is critical for nested frameworks/helpers
+log "Removing quarantine attributes..."
+if xattr -rd com.apple.quarantine "$APP_PATH" 2>/dev/null; then
+    log "Removed quarantine attribute from $PRODUCT_NAME.app"
+else
+    log "WARN: Could not remove quarantine attribute (or none existed)"
+fi
+
+log "Post-installation completed successfully"
+osascript -e "display notification \"$PRODUCT_NAME has been installed successfully\" with title \"Installation Complete\""
+
+exit 0

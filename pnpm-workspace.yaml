@@ -1,0 +1,21 @@
+packages:
+  - packages/*
+  - ./
+
+linkWorkspacePackages: true
+
+nodeLinker: hoisted
+
+onlyBuiltDependencies:
+  - core-js
+  - electron
+  - electron-winstaller
+  - esbuild
+  - sharp
+
+preferWorkspacePackages: true
+
+publicHoistPattern:
+  - '*'
+
+ignoreWorkspaceRootCheck: true

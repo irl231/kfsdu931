@@ -1,1 +1,2 @@
-# kfsdu931
+# aqverse
+Adventure Quest Universal Game Launcher
