@@ -15,7 +15,6 @@ export const TabItem = ({
   const platform = window.electron.getPlatform();
   const isMac = !["linux", "windows"].includes(platform);
   return (
-    // biome-ignore lint/a11y/useSemanticElements: "div with role=button"
     <div
       role="button"
       tabIndex={0}
@@ -26,6 +25,8 @@ export const TabItem = ({
           onClick();
         }
       }}
+      aria-selected={isActive}
+      aria-label={`${tab.title}${isActive ? " (current tab)" : ""}`}
       className={`${isMac ? "h-[32px]" : "h-[26px]"} relative group w-full select-none cursor-pointer`}
     >
       <TabPanel isActive={isActive} />

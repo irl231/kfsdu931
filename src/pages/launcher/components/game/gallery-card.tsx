@@ -1,5 +1,6 @@
+import { isImageLoaded, preloadImage } from "@web/utils";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import type { Game } from "../../constants";
 
 interface GalleryCardProps {
@@ -8,21 +9,30 @@ interface GalleryCardProps {
   index: number;
 }
 
-export function GalleryCard({ game, onClick, index }: GalleryCardProps) {
+function GalleryCardComponent({ game, onClick, index }: GalleryCardProps) {
   const [hover, setHover] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  // Check if image is already loaded on mount
   useEffect(() => {
     if (!game.image.background) {
       setImageLoaded(true);
       return;
     }
 
-    const img = new Image();
-    img.src = game.image.background;
-    img.onload = () => setImageLoaded(true);
-    img.onerror = () => setImageLoaded(true);
+    // Check cache first
+    if (isImageLoaded(game.image.background)) {
+      setImageLoaded(true);
+      return;
+    }
+
+    // Preload and subscribe to completion
+    preloadImage(game.image.background).then(() => {
+      setImageLoaded(true);
+    });
   }, [game.image.background]);
+
+  const handleClick = useMemo(() => onClick, [onClick]);
 
   return (
     <motion.button
@@ -35,10 +45,11 @@ export function GalleryCard({ game, onClick, index }: GalleryCardProps) {
         delay: index * 0.08,
         ease: [0.25, 0.4, 0.25, 1],
       }}
-      onClick={onClick}
+      onClick={handleClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       className="snap-start flex-shrink-0 md:w-[calc(33.33%-11px)] xl:w-[calc(25%-12px)] aspect-[7/4] relative rounded-xl overflow-hidden cursor-pointer shadow-lg bg-app-secondary outline-none group transition-colors text-left"
+      aria-label={`View ${game.name} details`}
     >
       <div className="w-full h-full overflow-hidden bg-app-primary relative">
         {game.image.background ? (
@@ -76,3 +87,4 @@ export function GalleryCard({ game, onClick, index }: GalleryCardProps) {
     </motion.button>
   );
 }
+export const GalleryCard = memo(GalleryCardComponent);

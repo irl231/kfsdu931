@@ -1,16 +1,29 @@
 import { motion } from "motion/react";
+import { memo, useCallback } from "react";
 
 interface ToggleSwitchProps {
   checked: boolean;
   onChange: (value: boolean) => void;
+  label?: string;
 }
 
-export function ToggleSwitch({ checked, onChange }: ToggleSwitchProps) {
+function ToggleSwitchComponent({
+  checked,
+  onChange,
+  label,
+}: ToggleSwitchProps) {
+  const handleChange = useCallback(() => {
+    onChange(!checked);
+  }, [checked, onChange]);
+
   return (
     <button
       type="button"
-      onClick={() => onChange(!checked)}
-      className={`w-11 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 relative flex items-center ${
+      onClick={handleChange}
+      role="switch"
+      aria-checked={checked}
+      aria-label={label ? `Toggle ${label}` : "Toggle option"}
+      className={`w-11 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 relative flex items-center focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-app-accent outline-none ${
         checked ? "bg-app-accent" : "bg-white/10"
       }`}
     >
@@ -25,3 +38,5 @@ export function ToggleSwitch({ checked, onChange }: ToggleSwitchProps) {
     </button>
   );
 }
+
+export const ToggleSwitch = memo(ToggleSwitchComponent);

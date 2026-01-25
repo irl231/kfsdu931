@@ -1,5 +1,6 @@
+import { isImageLoaded, preloadImage } from "@web/utils";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import type { Game } from "../../constants";
 
 interface SidebarGameItemProps {
@@ -10,7 +11,7 @@ interface SidebarGameItemProps {
   elementId: string;
 }
 
-export function SidebarGameItem({
+function SidebarGameItemComponent({
   game,
   isSelected,
   onClick,
@@ -25,10 +26,16 @@ export function SidebarGameItem({
       return;
     }
 
-    const img = new Image();
-    img.src = game.image.icon;
-    img.onload = () => setImgLoaded(true);
-    img.onerror = () => setImgLoaded(true);
+    // Check cache first
+    if (isImageLoaded(game.image.icon)) {
+      setImgLoaded(true);
+      return;
+    }
+
+    // Preload image
+    preloadImage(game.image.icon).then(() => {
+      setImgLoaded(true);
+    });
   }, [game.image.icon]);
 
   const baseClass = isSelected
@@ -48,6 +55,8 @@ export function SidebarGameItem({
         ease: [0.25, 0.4, 0.25, 1],
       }}
       className="snap-start flex-shrink-0 group relative flex flex-col items-center gap-1 cursor-pointer outline-none"
+      aria-pressed={isSelected}
+      aria-label={`${isSelected ? "Selected: " : ""}${game.name}`}
     >
       {isSelected && (
         <motion.div
@@ -78,3 +87,5 @@ export function SidebarGameItem({
     </motion.button>
   );
 }
+
+export const SidebarGameItem = memo(SidebarGameItemComponent);

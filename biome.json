@@ -32,6 +32,10 @@
         "useAdjacentOverloadSignatures": "off",
         "noUnknownAtRules": "off"
       },
+      "a11y": {
+        "useSemanticElements": "off",
+        "useAriaPropsSupportedByRole": "off"
+      },
       "style": {
         "noNonNullAssertion": "off"
       },

@@ -1,20 +1,18 @@
 import type { ReactNode } from "react";
+import { memo, useCallback } from "react";
 
-export function ToolBtn({
-  icon,
-  tooltip,
-  href,
-  onClick,
-}: {
+interface ToolBtnProps {
   icon: ReactNode;
   tooltip?: string;
   href?: string;
   onClick?: () => void;
-}) {
-  const handleClick = () => {
+}
+
+function ToolBtnComponent({ icon, tooltip, href, onClick }: ToolBtnProps) {
+  const handleClick = useCallback(() => {
     onClick?.();
     if (href) window.open(href, "_blank");
-  };
+  }, [onClick, href]);
 
   const baseClass =
     "bg-black/40 border-white/10 text-app-text-primary/70 hover:text-app-text-primary hover:bg-white/10";
@@ -22,8 +20,10 @@ export function ToolBtn({
   return (
     <button
       type="button"
-      className={`w-12 h-12 rounded-full border backdrop-blur-md flex items-center justify-center transition-all group relative outline-none ring-0 ${baseClass}`}
+      className={`w-12 h-12 rounded-full border backdrop-blur-md flex items-center justify-center transition-all group relative outline-none ring-0 focus-visible:ring-2 focus-visible:ring-app-accent ${baseClass}`}
       onClick={handleClick}
+      aria-label={tooltip}
+      title={tooltip}
     >
       {icon}
       {tooltip && (
@@ -34,3 +34,5 @@ export function ToolBtn({
     </button>
   );
 }
+
+export const ToolBtn = memo(ToolBtnComponent);

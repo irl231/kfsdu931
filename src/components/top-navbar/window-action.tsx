@@ -1,7 +1,7 @@
 import { IconMinus, IconSquare, IconX } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 
-export const WindowAction = () => {
+function WindowActionComponent() {
   const [_isMaximized, setIsMaximized] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -19,17 +19,17 @@ export const WindowAction = () => {
     };
   }, []);
 
-  const handleMinimize = () => {
+  const handleMinimize = useCallback(() => {
     window.electron.minimizeWindow();
-  };
+  }, []);
 
-  const handleMaximize = () => {
+  const handleMaximize = useCallback(() => {
     window.electron.toggleMaximizeWindow();
-  };
+  }, []);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     window.electron.closeWindow();
-  };
+  }, []);
 
   const platform = window.electron.getPlatform();
   if (platform && !["linux", "windows"].includes(platform)) return null;
@@ -49,22 +49,25 @@ export const WindowAction = () => {
           >
             <button
               type="button"
-              className="h-full w-10 aspect-square flex items-center justify-center hover:bg-white/10 text-app-text-primary/50 hover:text-app-text-primary transition-colors outline-none"
+              className="h-full w-10 aspect-square flex items-center justify-center hover:bg-white/10 text-app-text-primary/50 hover:text-app-text-primary transition-colors outline-none focus-visible:ring-1 focus-visible:ring-app-accent"
               onClick={handleMinimize}
+              aria-label="Minimize window"
             >
               <IconMinus size={16} />
             </button>
             <button
               type="button"
-              className="h-full w-10 aspect-square flex items-center justify-center hover:bg-white/10 text-app-text-primary/50 hover:text-app-text-primary transition-colors outline-none"
+              className="h-full w-10 aspect-square flex items-center justify-center hover:bg-white/10 text-app-text-primary/50 hover:text-app-text-primary transition-colors outline-none focus-visible:ring-1 focus-visible:ring-app-accent"
               onClick={handleMaximize}
+              aria-label="Toggle maximize window"
             >
               <IconSquare size={12} />
             </button>
             <button
               type="button"
-              className="h-full w-10 aspect-square flex items-center justify-center hover:bg-red-500 hover:text-app-text-primary text-app-text-primary/50 transition-colors outline-none"
+              className="h-full w-10 aspect-square flex items-center justify-center hover:bg-red-500 hover:text-app-text-primary text-app-text-primary/50 transition-colors outline-none focus-visible:ring-1 focus-visible:ring-red-500"
               onClick={handleClose}
+              aria-label="Close window"
             >
               <IconX size={16} />
             </button>
@@ -73,4 +76,6 @@ export const WindowAction = () => {
       )}
     </>
   );
-};
+}
+
+export const WindowAction = memo(WindowActionComponent);

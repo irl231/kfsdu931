@@ -6,22 +6,25 @@ import {
   IconWorld,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
+import { memo } from "react";
 import type { Game } from "../../constants";
 import { ToolBtn } from "../toolbar";
 
-export function DetailView({
-  game,
-  isLoading,
-  isOpen,
-  onPlay,
-  onToggleSidebar,
-}: {
+interface DetailViewProps {
   game: Game;
   isLoading: boolean;
   isOpen: boolean;
   onPlay: () => void;
   onToggleSidebar: () => void;
-}) {
+}
+
+function DetailViewComponent({
+  game,
+  isLoading,
+  isOpen,
+  onPlay,
+  onToggleSidebar,
+}: DetailViewProps) {
   const renderPlayButtonIcon = () => {
     if (isLoading) {
       return (
@@ -36,6 +39,7 @@ export function DetailView({
               duration: 1.5,
               ease: "linear",
             }}
+            aria-label="Loading"
           />
         </div>
       );
@@ -68,6 +72,8 @@ export function DetailView({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="absolute inset-0 flex"
+      role="region"
+      aria-label={`${game.name} details`}
     >
       <div className="flex-1 flex flex-col justify-end p-12 pb-16 z-10">
         <motion.div
@@ -98,7 +104,9 @@ export function DetailView({
               <button
                 type="button"
                 onClick={onPlay}
-                className={`${isLoading ? "pointer-events-none" : "pointer-events-auto"} h-14 pl-6 pr-8 rounded-full flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl hover:brightness-110 outline-none ring-0 bg-app-accent`}
+                aria-busy={isLoading}
+                disabled={isLoading}
+                className={`${isLoading ? "pointer-events-none" : "pointer-events-auto"} h-14 pl-6 pr-8 rounded-full flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl hover:brightness-110 outline-none ring-0 bg-app-accent disabled:opacity-75 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-app-accent`}
               >
                 {renderPlayButtonIcon()}
                 <div className="flex flex-col items-start">
@@ -126,3 +134,5 @@ export function DetailView({
     </motion.div>
   );
 }
+
+export const DetailView = memo(DetailViewComponent);

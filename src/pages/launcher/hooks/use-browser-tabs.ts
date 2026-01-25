@@ -1,7 +1,8 @@
 import type { BrowserTab } from "@web/components/webview";
+import { findGameByUrl } from "@web/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parse } from "tldts";
-import { GAMES, type Game } from "../constants";
+import type { Game } from "../constants";
 
 export function useBrowserTabs() {
   const [browserTabs, setBrowserTabs] = useState<BrowserTab[]>([]);
@@ -11,19 +12,26 @@ export function useBrowserTabs() {
 
   const tabHistoryRef = useRef<string[]>(["launcher"]);
 
+  // Optimize sorting: only sort when browserTabs changes
   const stableTabs = useMemo(
     () => [...browserTabs].sort((a, b) => a.createdAt - b.createdAt),
     [browserTabs],
   );
 
+  // Use Set for O(1) lookup instead of includes() which is O(n)
+  const loadingUrlsSet = useMemo(
+    () => new Set(loadingSwfUrls),
+    [loadingSwfUrls],
+  );
+
   const visibleTabs = useMemo(
-    () => browserTabs.filter((tab) => !loadingSwfUrls.includes(tab.url)),
-    [browserTabs, loadingSwfUrls],
+    () => browserTabs.filter((tab) => !loadingUrlsSet.has(tab.url)),
+    [browserTabs, loadingUrlsSet],
   );
 
   const hiddenTabs = useMemo(
-    () => browserTabs.filter((tab) => loadingSwfUrls.includes(tab.url)),
-    [browserTabs, loadingSwfUrls],
+    () => browserTabs.filter((tab) => loadingUrlsSet.has(tab.url)),
+    [browserTabs, loadingUrlsSet],
   );
 
   useEffect(() => {
@@ -64,7 +72,7 @@ export function useBrowserTabs() {
       setExternalUrls((prev) => [...prev, url]);
 
       const parsedUrl = new URL(url.replace(/\/$/, ""));
-      const tld = parse(parsedUrl.hostname);
+      const _tld = parse(parsedUrl.hostname);
       const parsedSenderUrl = new URL(senderUrl.replace(/\/$/, ""));
       const senderTld = parse(parsedSenderUrl.hostname);
 
@@ -76,14 +84,9 @@ export function useBrowserTabs() {
         );
       });
 
-      const accent =
-        referenceTab?.accent ||
-        GAMES.find(
-          (x) =>
-            x.url.game.includes(tld.domain!) ||
-            x.url.home.includes(tld.domain!),
-        )?.accent ||
-        "#ffffff";
+      // Use game lookup utility for O(1) lookup
+      const game = findGameByUrl(parsedUrl.href);
+      const accent = referenceTab?.accent || game?.accent || "#ffffff";
 
       const refId = referenceTab?.id || "unknown";
       const newTab: BrowserTab = {
@@ -150,9 +153,7 @@ export function useBrowserTabs() {
       if (activeTopTab === tabId) {
         window.electron.onDiscordRPCDestroy(currentTab.url);
 
-        const visibleTabsList = browserTabs.filter(
-          (tab) => !loadingSwfUrls.includes(tab.url),
-        );
+        const visibleTabsList = visibleTabs;
         const closedTabIndex = visibleTabsList.findIndex((t) => t.id === tabId);
         const remainingVisible = visibleTabsList.filter((t) => t.id !== tabId);
 
@@ -167,7 +168,7 @@ export function useBrowserTabs() {
         setActiveTopTab(nextTabId || "launcher");
       }
     },
-    [browserTabs, activeTopTab, loadingSwfUrls],
+    [browserTabs, activeTopTab, visibleTabs],
   );
 
   const handleReorder = useCallback(
@@ -212,8 +213,8 @@ export function useBrowserTabs() {
   }, []);
 
   const isGameLoading = useCallback(
-    (gameUrl: string) => loadingSwfUrls.includes(gameUrl),
-    [loadingSwfUrls],
+    (gameUrl: string) => loadingUrlsSet.has(gameUrl),
+    [loadingUrlsSet],
   );
 
   const isGameOpen = useCallback(
