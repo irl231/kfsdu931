@@ -18,5 +18,7 @@
   },
   "tailwindCSS.experimental.classRegex": [
     ["(?:cn)\\(([^\\);]*)[\\);]", "[`'\"]([^'\"`,;]*)[`'\"]"]
-  ]
+  ],
+  "chat.useNestedAgentsMdFiles": true,
+  "chat.useAgentSkills": true
 }
