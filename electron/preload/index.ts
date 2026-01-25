@@ -87,6 +87,22 @@ const api: ElectronAPI = {
       );
     };
   },
+  onWebViewCloseExternal: (cb: (tabId: number) => void) => {
+    const closeExternalHandler = (
+      _event: IpcRendererEvent,
+      tabId: number,
+    ) => {
+      cb(tabId);
+    };
+    ipcRenderer.on(channel.webview.closeExternal, closeExternalHandler);
+
+    return () => {
+      ipcRenderer.removeListener(
+        channel.webview.closeExternal,
+        closeExternalHandler,
+      );
+    };
+  },
   onWindowFullScreenChange: (cb) => {
     const enterFullScreenHandler = () => cb(true);
     const leaveFullScreenHandler = () => cb(false);

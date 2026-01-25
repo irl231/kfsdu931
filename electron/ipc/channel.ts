@@ -29,6 +29,7 @@ export const channel = {
   webview: {
     swfReady: "webview-swf-ready",
     openExternal: "webview-open-external",
+    closeExternal: "webview-close-external",
   },
   shell: {
     openExternal: "shell-open-external",

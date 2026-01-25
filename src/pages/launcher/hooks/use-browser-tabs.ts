@@ -72,7 +72,6 @@ export function useBrowserTabs() {
       setExternalUrls((prev) => [...prev, url]);
 
       const parsedUrl = new URL(url.replace(/\/$/, ""));
-      const _tld = parse(parsedUrl.hostname);
       const parsedSenderUrl = new URL(senderUrl.replace(/\/$/, ""));
       const senderTld = parse(parsedSenderUrl.hostname);
 
@@ -221,6 +220,24 @@ export function useBrowserTabs() {
     (gameUrl: string) => browserTabs.some((x) => x.url === gameUrl),
     [browserTabs],
   );
+
+  // handle external tab close signals (when social media links are opened)
+  useEffect(() => {
+    if (!window.electron) return;
+
+    const unlisten = window.electron.onWebViewCloseExternal((_tabId) => {
+      // The tabId passed from main process is the webview's content ID
+      // We need to close any tab that was initiated from that webview
+      // For now, close the most recent external tab as a heuristic
+      const externalTabs = stableTabs.filter((tab) => tab.id.startsWith("external"));
+      if (externalTabs.length > 0) {
+        // Close the most recent external tab (last one opened)
+        closeTab(null, externalTabs[externalTabs.length - 1].id);
+      }
+    });
+
+    return unlisten;
+  }, [stableTabs, closeTab]);
 
   return {
     browserTabs,

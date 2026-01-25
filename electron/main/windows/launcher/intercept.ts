@@ -43,9 +43,13 @@ const gameIdsCache = new Set(
 // Helper: Safe URL parsing with error handling
 function safeParseUrl(url: string): URL | null {
   try {
+    // Return null for empty or whitespace-only URLs without logging
+    if (!url || !url.trim()) {
+      return null;
+    }
     return new URL(url.replace(/\/$/, ""));
-  } catch (error) {
-    log.error("[Intercept] Invalid URL:", url, error);
+  } catch (_error) {
+    log.debug("[Intercept] Invalid URL:", url);
     return null;
   }
 }
@@ -102,15 +106,32 @@ export function handleWebRequestInterceptors(
     }
   };
 
-  // Helper: Open external URL safely
-  const openExternalSafely = async (url: string, reason: string): Promise<void> => {
-    try {
-      log.info(`[Intercept] ${reason}: ${url}`);
-      await shell.openExternal(url, { activate: true });
-    } catch (error) {
-      log.error(`[Intercept] Error opening external URL:`, error);
+// Helper: Open external URL safely and close the initiating tab
+const openExternalAndCloseTab = async (
+  url: string,
+  reason: string,
+  tabIdToClose?: number,
+): Promise<void> => {
+  try {
+    log.info(`[Intercept] ${reason}: ${url}`);
+    await shell.openExternal(url, { activate: true });
+
+    // Close the tab that initiated the external navigation
+    if (tabIdToClose !== undefined) {
+      const mainWindow = BrowserWindow.getAllWindows()[0];
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        // Send close signal with a small delay to ensure external app opens first
+        setTimeout(() => {
+          if (!mainWindow.isDestroyed()) {
+            mainWindow.webContents.send(channel.webview.closeExternal, tabIdToClose);
+          }
+        }, 100);
+      }
     }
-  };
+  } catch (error) {
+    log.error(`[Intercept] Error opening external URL:`, error);
+  }
+};
 
   const onWillHandler =
     (eventName: string) => (event: WillNavigateEvent, url: string) => {
@@ -123,13 +144,15 @@ export function handleWebRequestInterceptors(
 
         const reqTld = parseTLD(reqUrl.hostname);
 
-        if (isSocialDomain(reqTld.domain!)) {
+        if (reqTld.domain && isSocialDomain(reqTld.domain)) {
           event.preventDefault();
-          openExternalSafely(url, "Opening social link in external browser");
+          // Get the webview ID from the event casted to any
+          const tabId = (event as any).webContents?.id;
+          openExternalAndCloseTab(url, "Opening social link in external browser", tabId);
           return;
         }
 
-        if (!isDomainWhitelisted(reqTld.domain!)) {
+        if (reqTld.domain && !isDomainWhitelisted(reqTld.domain)) {
           log.debug(`[Intercept] Blocked ${eventName} to: ${url}`);
           event.preventDefault();
         }
@@ -143,18 +166,29 @@ export function handleWebRequestInterceptors(
     event.preventDefault();
 
     try {
-      const senderUrl = (event as any).sender?._getURL?.()?.replace?.(/\/$/, "") || "";
+      // Early validation: check if URL is empty or invalid
+      if (!url || !url.trim()) {
+        log.debug(`[Intercept] Blocked new-window with empty URL`);
+        return;
+      }
+
+      const senderUrl = (event as any).webContents?._getURL?.()?.replace?.(/\/$/, "") || "";
       const reqUrl = safeParseUrl(url);
       const parsedSenderUrl = safeParseUrl(senderUrl);
 
-      if (!reqUrl || !parsedSenderUrl) {
-        log.warn(`[Intercept] Invalid URL in new-window handler`);
+      if (!reqUrl) {
+        log.warn(`[Intercept] Invalid URL in new-window handler: ${url}`);
+        return;
+      }
+
+      if (!parsedSenderUrl && senderUrl) {
+        log.warn(`[Intercept] Invalid sender URL in new-window handler: ${senderUrl}`);
         return;
       }
 
       const reqTld = parseTLD(reqUrl.hostname);
-      const isSenderFromFile = parsedSenderUrl.protocol === "file:";
-      const isSenderFromLocal = parsedSenderUrl.hostname === "localhost";
+      const isSenderFromFile = parsedSenderUrl?.protocol === "file:";
+      const isSenderFromLocal = parsedSenderUrl?.hostname === "localhost";
 
       // Special case: Facebook redirect for AQW
       if (
@@ -165,13 +199,14 @@ export function handleWebRequestInterceptors(
       }
 
       // Handle social media links
-      if (isSocialDomain(reqTld.domain!)) {
-        openExternalSafely(url, "Opening social link in external browser");
+      if (reqTld.domain && isSocialDomain(reqTld.domain)) {
+        const tabId = (event as any).webContents?.id;
+        openExternalAndCloseTab(url, "Opening social link in external browser", tabId);
         return;
       }
 
       // Check whitelist
-      if (!isDomainWhitelisted(reqTld.domain!)) {
+      if (reqTld.domain && !isDomainWhitelisted(reqTld.domain)) {
         if (!(isSenderFromFile || isSenderFromLocal)) {
           log.debug(`[Intercept] Blocked new-window to: ${url}`);
           return;
@@ -184,7 +219,7 @@ export function handleWebRequestInterceptors(
         mainWindow.webContents.send(
           channel.webview.openExternal,
           reqUrl.href,
-          parsedSenderUrl.href,
+          parsedSenderUrl?.href || "",
         );
       } else {
         log.warn(`[Intercept] No main window available for external open`);
