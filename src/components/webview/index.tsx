@@ -1,7 +1,7 @@
 import spinnerImage from "@assets/img/spinner-light.svg";
 import { IconSphereOff } from "@tabler/icons-react";
 import type { WebviewTag } from "electron";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // social media domains that should close the tab (external link handled by main process)
@@ -80,11 +80,11 @@ export const Webview = ({
 }) => {
   const webviewRef = useRef<WebviewTag>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [_isDomReady, setIsDomReady] = useState(false);
   const [networkError, setNetworkError] = useState<{
     code: number;
     description: string;
   } | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const reloadWebview = useCallback(() => {
     const webview = webviewRef.current;
@@ -148,7 +148,6 @@ export const Webview = ({
     };
 
     const handleDomReady = () => {
-      setIsDomReady(true);
       setIsLoading(false);
     };
 
@@ -213,42 +212,55 @@ export const Webview = ({
   return (
     <div
       className={`relative w-full h-full ${isActive ? "z-40 opacity-100 pointer-events-auto" : "z-0 opacity-0 pointer-events-none"}`}
+      aria-busy={showLoadingOverlay}
+      aria-live="polite"
     >
       <AnimatePresence mode="wait">
         {showLoadingOverlay && (
           <motion.div
             key="loading"
-            initial={{ opacity: 0 }}
+            initial={prefersReducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
             className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-app-primary"
+            role="status"
+            aria-live="polite"
+            aria-label="Page loading"
           >
             <div className="w-8 h-8 pr-[2px] flex items-center justify-center">
               <motion.img
                 src={spinnerImage}
                 alt="loading"
                 className="w-[24px] h-[24px]"
-                animate={{ rotate: 360 }}
-                transition={{
-                  repeat: Number.POSITIVE_INFINITY,
-                  duration: 1.5,
-                  ease: "linear",
-                }}
+                aria-hidden="true"
+                animate={prefersReducedMotion ? false : { rotate: 360 }}
+                transition={
+                  prefersReducedMotion
+                    ? { duration: 0 }
+                    : {
+                        repeat: Number.POSITIVE_INFINITY,
+                        duration: 1.5,
+                        ease: "linear",
+                      }
+                }
               />
             </div>
-            <p className="mt-4 text-sm text-app-text-primary/60">Loading...</p>
+            <p className="mt-4 text-sm text-app-text-primary/60">Loading…</p>
           </motion.div>
         )}
 
         {showOfflineOverlay && (
           <motion.div
             key="offline"
-            initial={{ opacity: 0 }}
+            initial={prefersReducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
             className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-app-primary"
+            role="alert"
+            aria-live="assertive"
+            aria-label="Network error"
           >
             <div>
               <IconSphereOff
@@ -276,7 +288,7 @@ export const Webview = ({
             <button
               type="button"
               onClick={reloadWebview}
-              className="mt-6 px-6 py-2 text-app-primary text-sm font-semibold rounded-full transition-colors hover:opacity-90"
+              className="mt-6 px-6 py-2.5 min-h-[44px] min-w-[120px] text-app-primary text-sm font-semibold rounded-full transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-app-text-primary focus-visible:ring-offset-app-primary"
               style={{
                 backgroundColor: tab.accent,
               }}
