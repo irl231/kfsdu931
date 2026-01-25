@@ -222,7 +222,9 @@ export const Webview = ({
             initial={prefersReducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
-            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
+            transition={
+              prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }
+            }
             className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-app-primary"
             role="status"
             aria-live="polite"
@@ -256,7 +258,9 @@ export const Webview = ({
             initial={prefersReducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
-            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
+            transition={
+              prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }
+            }
             className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-app-primary"
             role="alert"
             aria-live="assertive"
