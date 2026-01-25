@@ -1,7 +1,9 @@
 import "../polyfills/event";
+import { cleanupDiscordRPC } from "@electron/ipc/discord-rpc";
 import { registerIpcHandlers } from "@electron/ipc";
 import { appSettingsStore, storeKey } from "@electron/store";
 import { app, type BrowserWindow } from "electron";
+import log from "electron-log";
 import { getCurrentDisplayMode } from "win-screen-resolution";
 import { registerFlash } from "./flash";
 import { setQuitting } from "./lifecycle";
@@ -9,6 +11,10 @@ import { initUpdate } from "./update";
 import { IS_DEV, sleep } from "./utils";
 import { createLauncherWindow } from "./windows/launcher";
 import { createSplashWindow } from "./windows/splash";
+
+// Configure logging
+log.transports.file.level = IS_DEV ? "debug" : "info";
+log.transports.console.level = IS_DEV ? "debug" : "warn";
 
 // Disable renderer backgrounding to prevent the app from unloading when in the background
 // https://github.com/electron/electron/issues/2822
@@ -21,14 +27,19 @@ if (process.platform === "win32") {
   app.commandLine.appendSwitch("high-dpi-support", "true");
 
   // fix high-dpi scale factor on Windows (150% scaling)
-  const { scale } = getCurrentDisplayMode();
-  const forceScale =
-    typeof scale === "number" && scale >= 150
-      ? scale >= 250
-        ? `${scale / 100 - 0.25}`
-        : "1.75"
-      : "1";
-  app.commandLine.appendSwitch("force-device-scale-factor", forceScale);
+  try {
+    const { scale } = getCurrentDisplayMode();
+    const forceScale =
+      typeof scale === "number" && scale >= 150
+        ? scale >= 250
+          ? `${scale / 100 - 0.25}`
+          : "1.75"
+        : "1";
+    app.commandLine.appendSwitch("force-device-scale-factor", forceScale);
+    log.info(`[Main] Applied DPI scaling: ${forceScale}`);
+  } catch (error) {
+    log.error("[Main] Error setting DPI scale:", error);
+  }
 }
 
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
@@ -36,30 +47,92 @@ app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
 let mainWin: BrowserWindow | null = null;
 
-registerFlash();
-registerIpcHandlers();
+// Register handlers early
+try {
+  registerFlash();
+  registerIpcHandlers();
+  log.info("[Main] IPC handlers registered successfully");
+} catch (error) {
+  log.error("[Main] Error registering handlers:", error);
+}
 
+// Optimize app startup with proper async handling
 app.whenReady().then(async () => {
-  if (process.platform === "win32") app.setAppUserModelId("dev.lazuee.aqwps");
+  try {
+    if (process.platform === "win32") {
+      app.setAppUserModelId("dev.lazuee.aqwps");
+    }
 
-  const splash = await createSplashWindow();
-  await initUpdate(splash.setState);
-  splash.setState("starting application");
-  await sleep(2000);
-  splash.setState("starting application", false);
-  await sleep(500);
+    log.info("[Main] App ready, initializing windows...");
 
-  mainWin = await createLauncherWindow(splash.close);
+    const splash = await createSplashWindow();
+    await initUpdate(splash.setState);
+
+    splash.setState("starting application");
+    await sleep(2000);
+
+    splash.setState("starting application", false);
+    await sleep(500);
+
+    mainWin = await createLauncherWindow(splash.close);
+    log.info("[Main] Launcher window created successfully");
+  } catch (error) {
+    log.error("[Main] Error during app initialization:", error);
+    app.quit();
+  }
 });
 
+// Graceful shutdown handling
 app
-  .on("before-quit", () => setQuitting(true))
-  .on("will-quit", () => IS_DEV && process.exit(0))
+  .on("before-quit", async (event) => {
+    log.info("[Main] App shutting down...");
+    setQuitting(true);
+
+    // Prevent immediate quit to allow cleanup
+    if (mainWin && !mainWin.isDestroyed()) {
+      event.preventDefault();
+
+      try {
+        // Clean up Discord RPC
+        await cleanupDiscordRPC();
+        log.info("[Main] Discord RPC cleaned up");
+      } catch (error) {
+        log.error("[Main] Error cleaning up Discord RPC:", error);
+      }
+
+      // Now quit for real
+      setTimeout(() => app.quit(), 100);
+    }
+  })
+  .on("will-quit", () => {
+    if (IS_DEV) {
+      log.info("[Main] Dev mode - force exit");
+      process.exit(0);
+    }
+  })
   .on("window-all-closed", () => {
-    const closeWindowOption = appSettingsStore.get(
-      storeKey.appSettings,
-    ).closeWindowOption;
-    if (process.platform !== "darwin" || closeWindowOption === "exit") {
-      if (mainWin?.isDestroyed()) app.quit();
+    try {
+      const closeWindowOption = appSettingsStore.get(
+        storeKey.appSettings,
+      ).closeWindowOption;
+
+      if (process.platform !== "darwin" || closeWindowOption === "exit") {
+        if (mainWin?.isDestroyed() || !mainWin) {
+          log.info("[Main] All windows closed, quitting app");
+          app.quit();
+        }
+      }
+    } catch (error) {
+      log.error("[Main] Error in window-all-closed:", error);
+      app.quit();
     }
   });
+
+// Handle uncaught errors
+process.on("uncaughtException", (error) => {
+  log.error("[Main] Uncaught exception:", error);
+});
+
+process.on("unhandledRejection", (reason) => {
+  log.error("[Main] Unhandled rejection:", reason);
+});

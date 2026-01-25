@@ -1,19 +1,21 @@
 import { channel } from "@electron/ipc/channel";
 import { contextBridge, type IpcRendererEvent, ipcRenderer } from "electron";
 
-console.log("preload loaded:", window.location.href);
+// Use environment check instead of console.log for production
+if (process.env.NODE_ENV === "development") {
+  console.log("preload loaded:", window.location.href);
+}
+
+// Cache platform to avoid repeated process.platform checks
+const cachedPlatform: AppPlatForm =
+  process.platform === "darwin"
+    ? "macos"
+    : process.platform === "win32"
+      ? "windows"
+      : "linux";
 
 const api: ElectronAPI = {
-  getPlatform: () => {
-    const platform: AppPlatForm =
-      process.platform === "darwin"
-        ? "macos"
-        : process.platform === "win32"
-          ? "windows"
-          : "linux";
-
-    return platform;
-  },
+  getPlatform: () => cachedPlatform,
   getAppVersion: () => ipcRenderer.invoke(channel.app.getVersion),
   getAppName: () => ipcRenderer.invoke(channel.app.getName),
   splashReady: () => ipcRenderer.send(channel.splash.ready),
@@ -107,8 +109,9 @@ const api: ElectronAPI = {
     if (typeof richPresenceOrUrl === "string") {
       return ipcRenderer.send(channel.discordRPC.update, richPresenceOrUrl);
     }
-    richPresenceOrUrl.url = window.location.href;
-    ipcRenderer.send(channel.discordRPC.update, richPresenceOrUrl);
+    // Clone object to avoid mutations
+    const presence = { ...richPresenceOrUrl, url: window.location.href };
+    ipcRenderer.send(channel.discordRPC.update, presence);
   },
   onDiscordRPCDestroy: (url?: string) => {
     ipcRenderer.send(channel.discordRPC.destroy, url);
@@ -117,4 +120,9 @@ const api: ElectronAPI = {
     ipcRenderer.invoke(channel.shell.openExternal, url),
 };
 
-contextBridge.exposeInMainWorld("electron", api);
+// Expose API to renderer with error handling
+try {
+  contextBridge.exposeInMainWorld("electron", api);
+} catch (error) {
+  console.error("Failed to expose Electron API:", error);
+}
