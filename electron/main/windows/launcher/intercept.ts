@@ -14,7 +14,8 @@ import {
 import log from "electron-log";
 import { parse as parseTLD } from "tldts";
 
-const socialDomains = [
+// Use Set for O(1) lookups instead of array
+const SOCIAL_DOMAINS = new Set([
   "facebook.com",
   "twitter.com",
   "x.com",
@@ -23,198 +24,316 @@ const socialDomains = [
   "discord.gg",
   "reddit.com",
   "linkedin.com",
-];
+]);
+
+// Constants for special cases
+const FACEBOOK_REDIRECT_URI = "https://game.aq.com/game/AQWFB.html";
+const SALSICHA_USER_AGENT = `${USER_AGENT} AdobeAIR/50.0`;
+const FLASH_HEADER = "ShockwaveFlash/32.0.0.371";
+
+// Cache for parsed game IDs
+const gameIdsCache = new Set(
+  GAMES.map((x) => {
+    const url = new URL(x.url.game.replace(/\/$/, ""));
+    const tld = parseTLD(url.hostname);
+    return `${tld.domain}-${url.pathname}`;
+  })
+);
+
+// Helper: Safe URL parsing with error handling
+function safeParseUrl(url: string): URL | null {
+  try {
+    return new URL(url.replace(/\/$/, ""));
+  } catch (error) {
+    log.error("[Intercept] Invalid URL:", url, error);
+    return null;
+  }
+}
+
+// Helper: Check if domain is social media
+function isSocialDomain(domain: string | undefined): boolean {
+  return domain ? SOCIAL_DOMAINS.has(domain) : false;
+}
 
 export function handleWebRequestInterceptors(
   windowOrwebContents: BrowserWindow | WebContents,
   domains: string[] = [],
 ) {
-  const isDomainWhitelisted = (
-    domain: string,
-    anyDomains: string[],
-  ): boolean => {
-    return [...new Set([...anyDomains, ...WHITELISTED_DOMAINS])].includes(
-      domain,
-    );
+  // Memoized whitelist set for performance
+  const whitelistSet = new Set([...domains, ...WHITELISTED_DOMAINS]);
+
+  const isDomainWhitelisted = (domain: string | undefined): boolean => {
+    return domain ? whitelistSet.has(domain) : false;
   };
 
   const webContents =
     windowOrwebContents instanceof BrowserWindow
       ? windowOrwebContents.webContents
       : windowOrwebContents;
+
   const onBeforeSendHeadersHandlerWeb = async (
     details: OnBeforeSendHeadersListenerDetails,
     callback: (response: { requestHeaders?: Record<string, string> }) => void,
   ) => {
-    const headers = details.requestHeaders || {};
+    try {
+      const headers = { ...details.requestHeaders };
+      const reqUrl = safeParseUrl(details.url);
 
-    const reqUrl = new URL(details.url.replace(/\/$/, ""));
-    const isSalsichaApiVersion = reqUrl.pathname.startsWith("/api/version");
+      if (!reqUrl) {
+        callback({ requestHeaders: headers });
+        return;
+      }
 
-    if (isSalsichaApiVersion) {
-      headers["User-Agent"] = `${USER_AGENT} AdobeAIR/50.0`;
-      headers["Referer"] = "app:/Desktop/salsicha";
-    } else {
-      headers["User-Agent"] = USER_AGENT;
+      const isSalsichaApiVersion = reqUrl.pathname.startsWith("/api/version");
+
+      if (isSalsichaApiVersion) {
+        headers["User-Agent"] = SALSICHA_USER_AGENT;
+        headers["Referer"] = "app:/Desktop/salsicha";
+      } else {
+        headers["User-Agent"] = USER_AGENT;
+      }
+
+      headers["X-Requested-With"] = FLASH_HEADER;
+
+      callback({ requestHeaders: headers });
+    } catch (error) {
+      log.error("[Intercept] Error in headers handler:", error);
+      callback({ requestHeaders: details.requestHeaders });
     }
+  };
 
-    headers["X-Requested-With"] = "ShockwaveFlash/32.0.0.371";
-
-    callback({ requestHeaders: headers });
+  // Helper: Open external URL safely
+  const openExternalSafely = async (url: string, reason: string): Promise<void> => {
+    try {
+      log.info(`[Intercept] ${reason}: ${url}`);
+      await shell.openExternal(url, { activate: true });
+    } catch (error) {
+      log.error(`[Intercept] Error opening external URL:`, error);
+    }
   };
 
   const onWillHandler =
     (eventName: string) => (event: WillNavigateEvent, url: string) => {
-      const reqUrl = new URL(url.replace(/\/$/, ""));
-      const reqTld = parseTLD(reqUrl.hostname);
+      try {
+        const reqUrl = safeParseUrl(url);
+        if (!reqUrl) {
+          event.preventDefault();
+          return;
+        }
 
-      if (reqTld.domain && socialDomains.includes(reqTld.domain)) {
-        event.preventDefault();
-        log.info(`Opening social link in external browser: ${url}`);
-        shell.openExternal(url, { activate: true });
-        return;
-      }
+        const reqTld = parseTLD(reqUrl.hostname);
 
-      if (!isDomainWhitelisted(reqTld.domain!, domains)) {
-        log.debug(`Blocked ${eventName} to: ${url}`);
+        if (isSocialDomain(reqTld.domain!)) {
+          event.preventDefault();
+          openExternalSafely(url, "Opening social link in external browser");
+          return;
+        }
+
+        if (!isDomainWhitelisted(reqTld.domain!)) {
+          log.debug(`[Intercept] Blocked ${eventName} to: ${url}`);
+          event.preventDefault();
+        }
+      } catch (error) {
+        log.error(`[Intercept] Error in ${eventName} handler:`, error);
         event.preventDefault();
       }
     };
 
   const onNewWindowHandler = (event: NewWindowEvent, url: string) => {
-    const senderUrl = (event as any).sender._getURL().replace(/\/$/, "");
-    const reqUrl = new URL(url.replace(/\/$/, ""));
-    const reqTld = parseTLD(reqUrl.hostname);
-    const parsedSenderUrl = new URL(senderUrl);
-    const isSenderFromFile = parsedSenderUrl.protocol === "file:";
-    const isSenderFromLocal = parsedSenderUrl.hostname === "localhost";
-
     event.preventDefault();
-    if (
-      reqTld.domain === "facebook.com" &&
-      reqUrl.searchParams.get("redirect_uri") ===
-        "https://game.aq.com/game/AQWFB.html"
-    ) {
-      return;
-    }
 
-    if (reqTld.domain && socialDomains.includes(reqTld.domain)) {
-      log.info(`Opening social link in external browser: ${url}`);
-      shell.openExternal(url, { activate: true });
-      return;
-    }
+    try {
+      const senderUrl = (event as any).sender?._getURL?.()?.replace?.(/\/$/, "") || "";
+      const reqUrl = safeParseUrl(url);
+      const parsedSenderUrl = safeParseUrl(senderUrl);
 
-    if (!isDomainWhitelisted(reqTld.domain!, domains)) {
-      if (!(isSenderFromFile || isSenderFromLocal)) {
-        log.debug(`Blocked new-window to: ${url}`);
+      if (!reqUrl || !parsedSenderUrl) {
+        log.warn(`[Intercept] Invalid URL in new-window handler`);
         return;
       }
-    }
 
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
-      channel.webview.openExternal,
-      reqUrl.href,
-      parsedSenderUrl.href,
-    );
+      const reqTld = parseTLD(reqUrl.hostname);
+      const isSenderFromFile = parsedSenderUrl.protocol === "file:";
+      const isSenderFromLocal = parsedSenderUrl.hostname === "localhost";
+
+      // Special case: Facebook redirect for AQW
+      if (
+        reqTld.domain === "facebook.com" &&
+        reqUrl.searchParams.get("redirect_uri") === FACEBOOK_REDIRECT_URI
+      ) {
+        return;
+      }
+
+      // Handle social media links
+      if (isSocialDomain(reqTld.domain!)) {
+        openExternalSafely(url, "Opening social link in external browser");
+        return;
+      }
+
+      // Check whitelist
+      if (!isDomainWhitelisted(reqTld.domain!)) {
+        if (!(isSenderFromFile || isSenderFromLocal)) {
+          log.debug(`[Intercept] Blocked new-window to: ${url}`);
+          return;
+        }
+      }
+
+      // Send to main window
+      const mainWindow = BrowserWindow.getAllWindows()[0];
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(
+          channel.webview.openExternal,
+          reqUrl.href,
+          parsedSenderUrl.href,
+        );
+      } else {
+        log.warn(`[Intercept] No main window available for external open`);
+      }
+    } catch (error) {
+      log.error(`[Intercept] Error in new-window handler:`, error);
+    }
   };
 
+  // Set user agent
   webContents.userAgent = USER_AGENT;
+
+  // Attach event handlers
   webContents.on("new-window", onNewWindowHandler as any);
   webContents.on("will-navigate", onWillHandler("navigate") as any);
   webContents.on("will-redirect", onWillHandler("redirect") as any);
-  webContents.on("did-attach-webview", (_event, web) => {
-    const webviewUrl = new URL((web as any)._getURL().replace(/\/$/, ""));
-    const webviewTld = parseTLD(webviewUrl.hostname);
 
-    handleWebRequestInterceptors(web, [webviewTld.domain!]);
-  });
-  webContents.on("will-attach-webview", (_event, webPreferences, _params) => {
-    delete webPreferences.preload;
-    webPreferences.nodeIntegration = false;
-    if (webPreferences.plugins) {
-      webPreferences.preload = path.join(__dirname, "preload.cjs");
+  webContents.on("did-attach-webview", (_event, web) => {
+    try {
+      const webviewUrl = safeParseUrl((web as any)._getURL?.()?.replace?.(/\/$/, "") || "");
+      if (!webviewUrl) return;
+
+      const webviewTld = parseTLD(webviewUrl.hostname);
+      if (webviewTld.domain) {
+        handleWebRequestInterceptors(web, [webviewTld.domain]);
+      }
+    } catch (error) {
+      log.error(`[Intercept] Error in did-attach-webview:`, error);
     }
   });
 
+  webContents.on("will-attach-webview", (_event, webPreferences, _params) => {
+    try {
+      delete webPreferences.preload;
+      webPreferences.nodeIntegration = false;
+      if (webPreferences.plugins) {
+        webPreferences.preload = path.join(__dirname, "preload.cjs");
+      }
+    } catch (error) {
+      log.error(`[Intercept] Error in will-attach-webview:`, error);
+    }
+  });
+
+  // Session request handlers
   webContents.session.webRequest.onBeforeSendHeaders(
     { urls: ["*://*/*"] },
     onBeforeSendHeadersHandlerWeb,
   );
+
   webContents.session.webRequest.onHeadersReceived(
     ({ responseHeaders, url }, cb) => {
-      if (responseHeaders && url.endsWith(".css"))
-        responseHeaders["content-type"] = ["text/css"];
-
-      cb({ cancel: false, responseHeaders });
+      try {
+        if (responseHeaders && url.endsWith(".css")) {
+          responseHeaders["content-type"] = ["text/css"];
+        }
+        cb({ cancel: false, responseHeaders });
+      } catch (error) {
+        log.error(`[Intercept] Error in headers received:`, error);
+        cb({ cancel: false, responseHeaders });
+      }
     },
   );
+
+  // Handle webview injection for BrowserWindow only
   if (windowOrwebContents instanceof BrowserWindow) {
-    const games = GAMES.map((x) => {
-      const url = new URL(x.url.game.replace(/\/$/, ""));
-      const tld = parseTLD(url.hostname);
-      return `${tld.domain}-${url.pathname}`;
-    });
     app.on("web-contents-created", (_event, contents) => {
-      contents.setUserAgent(USER_AGENT);
+      try {
+        contents.setUserAgent(USER_AGENT);
 
-      if (contents.getType() === "webview") {
-        contents.on("dom-ready", () => {
-          const webviewUrl: URL = new URL(contents.getURL().replace(/\/$/, ""));
-          const webviewTld = parseTLD(webviewUrl.hostname);
-          if (!games.includes(`${webviewTld.domain}-${webviewUrl.pathname}`))
-            return;
-          contents
-            .executeJavaScript(`
-                        const setLoaderReady = () => document.getElementById("play-game").setDiscordRPCReady();
-                        const onDiscordRPC = (rpc) => window.electron.onDiscordRPCUpdate(rpc);
-                        (() => {
-                            const checkSWF = () => {
-                                const swf = document.querySelector('embed[src*=".swf"], object[data*=".swf"]');
-                                if (swf) {
-                                    const style = document.createElement('style');
-                                    style.innerHTML = \`
-                                        html, body {
-                                            overflow: hidden !important;
-                                            margin: 0 !important;
-                                            padding: 0 !important;
-                                            width: 100% !important;
-                                            height: 100% !important;
-                                        }
+        if (contents.getType() === "webview") {
+          contents.on("dom-ready", () => {
+            try {
+              const webviewUrl = safeParseUrl(contents.getURL());
+              if (!webviewUrl) return;
 
-                                        body > *:not(embed):not(object) {
-                                            visibility: hidden !important;
-                                        }
+              const webviewTld = parseTLD(webviewUrl.hostname);
+              const gameId = `${webviewTld.domain}-${webviewUrl.pathname}`;
 
-                                        embed[src*=".swf"], object[data*=".swf"] {
-                                            visibility: visible !important;
-                                            position: fixed !important;
-                                            top: 0 !important;
-                                            left: 0 !important;
-                                            width: 100vw !important;
-                                            height: 100vh !important;
-                                            z-index: 2147483647 !important;
-                                            display: block !important;
-                                        }
-                                    \`;
+              if (!gameIdsCache.has(gameId)) return;
 
-                                    (document.head || document.documentElement).appendChild(style);
-                                    return true;
-                                }
-                                requestAnimationFrame(checkSWF);
-                            };
-                            checkSWF();
-                        })();
-                    `)
-            .then(() =>
-              contents.hostWebContents.send(
-                channel.webview.swfReady,
-                webviewUrl.href,
-                contents.id,
-              ),
-            )
-            .catch(() => {});
-        });
+              // Inject SWF styling and Discord RPC handlers
+              contents
+                .executeJavaScript(getSWFInjectionScript())
+                .then(() => {
+                  if (contents.hostWebContents && !contents.hostWebContents.isDestroyed()) {
+                    contents.hostWebContents.send(
+                      channel.webview.swfReady,
+                      webviewUrl.href,
+                      contents.id,
+                    );
+                  }
+                })
+                .catch((error) => {
+                  log.error(`[Intercept] Error injecting SWF script:`, error);
+                });
+            } catch (error) {
+              log.error(`[Intercept] Error in dom-ready handler:`, error);
+            }
+          });
+        }
+      } catch (error) {
+        log.error(`[Intercept] Error in web-contents-created:`, error);
       }
     });
   }
+}
+
+// Extracted SWF injection script for better maintainability
+function getSWFInjectionScript(): string {
+  return `
+    const setLoaderReady = () => document.getElementById("play-game").setDiscordRPCReady();
+    const onDiscordRPC = (rpc) => window.electron.onDiscordRPCUpdate(rpc);
+
+    (() => {
+      const checkSWF = () => {
+        const swf = document.querySelector('embed[src*=".swf"], object[data*=".swf"]');
+        if (swf) {
+          const style = document.createElement('style');
+          style.innerHTML = \`
+            html, body {
+              overflow: hidden !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              width: 100% !important;
+              height: 100% !important;
+            }
+
+            body > *:not(embed):not(object) {
+              visibility: hidden !important;
+            }
+
+            embed[src*=".swf"], object[data*=".swf"] {
+              visibility: visible !important;
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100vw !important;
+              height: 100vh !important;
+              z-index: 2147483647 !important;
+              display: block !important;
+            }
+          \`;
+
+          (document.head || document.documentElement).appendChild(style);
+          return true;
+        }
+        requestAnimationFrame(checkSWF);
+      };
+      checkSWF();
+    })();
+  `;
 }
