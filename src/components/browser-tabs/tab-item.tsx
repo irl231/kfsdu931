@@ -34,7 +34,7 @@ export const TabItem = ({
       aria-label={`${tab.title}${isActive ? " (current tab)" : ""}`}
       aria-controls={`tabpanel-${tab.id}`}
       id={`tab-${tab.id}`}
-      className={`${isMac ? "h-[32px]" : "h-[26px]"} relative group w-full select-none cursor-pointer focus-visible:outline-2 focus-visible:outline-app-accent focus-visible:outline-offset-2 focus-visible:rounded transition-colors`}
+      className={`${isMac ? "h-[32px]" : "h-[26px]"} relative group w-full select-none cursor-pointer outline-none transition-colors`}
     >
       <TabPanel isActive={isActive} />
       <div className="relative z-50 h-full flex items-center justify-between gap-2 pl-3 pr-2 py-1.5 transition-colors">
