@@ -16,13 +16,13 @@ export const AudioToggle = ({
       onPointerDown={(e) => e.stopPropagation()}
       aria-label={isMuted ? "Unmute tab" : "Mute tab"}
       aria-pressed={isMuted}
-      className="p-0 rounded-full transition-all outline-none bg-transparent flex items-center justify-center"
+      className="w-2 h-2 p-0 rounded-full outline-none bg-transparent flex items-center justify-center"
       style={{ color: accent }}
     >
       {isMuted ? (
-        <IconVolumeOff size={12} strokeWidth={2.5} />
+        <IconVolumeOff size={8} strokeWidth={2.5} className="flex-shrink-0" />
       ) : (
-        <IconVolume size={12} strokeWidth={2.5} />
+        <IconVolume size={8} strokeWidth={2.5} className="flex-shrink-0" />
       )}
     </button>
   );
