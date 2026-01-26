@@ -127,6 +127,8 @@ export function LauncherPage() {
         closeTab={closeTab}
         setIsTabDragging={setIsTabDragging}
         onOpenSettings={handleOpenSettings}
+        onCloseSettings={handleCloseSettings}
+        isSettingsOpen={showSettings}
       />
 
       <div className="flex-1 relative flex overflow-hidden">

@@ -1,4 +1,3 @@
-import { IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { SettingsMenuItem } from "./settings-menu-item";
@@ -125,14 +124,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         <div className="flex-1 flex flex-col relative bg-app-secondary">
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-5 right-5 z-20 outline-none ring-0 bg-transparent text-app-text-primary/40 hover:text-app-text-primary transition-colors"
-          >
-            <IconX size={18} />
-          </button>
-
           <div className="flex-1 pl-6 pr-10 py-8 overflow-y-auto scrollbar-thin">
             <AnimatePresence mode="wait">
               <motion.div

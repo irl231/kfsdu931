@@ -1,6 +1,6 @@
 import { IconSettings } from "@tabler/icons-react";
 import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrowserTabsList } from "../browser-tabs";
 import { TabPanel } from "../browser-tabs/tab-panel";
 import type { BrowserTab } from "../webview";
@@ -14,6 +14,8 @@ interface TopNavbarProps {
   closeTab: (e: React.MouseEvent | null, id: string) => void;
   setIsTabDragging: (isDragging: boolean) => void;
   onOpenSettings: () => void;
+  onCloseSettings: () => void;
+  isSettingsOpen: boolean;
 }
 
 export const TopNavbar = ({
@@ -24,6 +26,8 @@ export const TopNavbar = ({
   closeTab,
   setIsTabDragging,
   onOpenSettings,
+  onCloseSettings,
+  isSettingsOpen,
 }: TopNavbarProps) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   // Memoize platform check - only compute once
@@ -42,6 +46,11 @@ export const TopNavbar = ({
       unlistenFullScreen();
     };
   }, []);
+
+  const handleSettings = useCallback(() => {
+    if (isSettingsOpen) onCloseSettings();
+    else onOpenSettings();
+  }, [isSettingsOpen, onOpenSettings, onCloseSettings]);
 
   return (
     <nav className="relative flex flex-col z-30" aria-label="Main navigation">
@@ -98,7 +107,7 @@ export const TopNavbar = ({
           />
           <button
             type="button"
-            onClick={onOpenSettings}
+            onClick={handleSettings}
             className="flex-shrink-0 flex items-center justify-center mb-2 mr-2"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
             aria-label="Open settings"
