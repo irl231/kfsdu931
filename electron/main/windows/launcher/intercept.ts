@@ -24,6 +24,7 @@ const SOCIAL_DOMAINS = new Set([
   "discord.gg",
   "reddit.com",
   "linkedin.com",
+  "youtube.com",
 ]);
 
 // Constants for special cases
@@ -154,6 +155,8 @@ export function handleWebRequestInterceptors(
 
       // Send close signal with sender URL for identification
       if (senderUrlForClose) {
+        if (!isSocialDomain(safeParseUrl(senderUrlForClose)?.hostname || ""))
+          return;
         log.info(
           `[Intercept] Sending close signal for sender: ${senderUrlForClose}`,
         );

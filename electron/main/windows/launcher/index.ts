@@ -15,21 +15,27 @@ const loadUrl: string = IS_DEV
 let win: BrowserWindow | null = null;
 let _tray: Tray | null = null;
 
+const winSize = {
+  width: 960,
+  height: 540,
+};
+winSize.height += 63;
+
 export function createLauncherWindow(opened?: () => void) {
   const { workArea: primaryDisplay } = screen.getPrimaryDisplay();
   const biggest = Math.max(primaryDisplay.width, primaryDisplay.height) * 0.75;
   const size = {
     width: ~~biggest,
-    height: ~~((biggest / 16) * 9),
+    height: ~~((biggest / 16) * 10),
   };
-
+  console.log("Creating launcher window with size:", size);
   win ??= new BrowserWindow({
     icon: getMacIconPath(),
     backgroundColor: "#141517",
     width: size.width,
     height: size.height,
-    minWidth: 960,
-    minHeight: 590,
+    minWidth: winSize.width,
+    minHeight: winSize.height,
     center: true,
     frame: false,
     show: false,
@@ -51,7 +57,7 @@ export function createLauncherWindow(opened?: () => void) {
   });
 
   win.setMenu(null);
-  win.setAspectRatio(960 / 590, { width: 960, height: 590 });
+  win.setAspectRatio(16 / 10, winSize);
 
   applyDock();
   handleWebRequestInterceptors(win);

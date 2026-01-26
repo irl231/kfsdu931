@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // social media domains that should close the tab (external link handled by main process)
 const SOCIAL_DOMAINS = [
+  "youtube.com",
   "facebook.com",
   "twitter.com",
   "x.com",
@@ -186,15 +187,22 @@ export const Webview = ({
       }
     };
 
-    const handleDidStartLoading = () => {
-      setIsLoading(true);
+    const handleDidStartLoading = (e: any) => {
+      const currentWebview = e.target as WebviewTag;
+      const isWaitingForResponse = currentWebview.isWaitingForResponse();
+      if (isWaitingForResponse) {
+        webview.removeEventListener("did-start-loading", handleDidStartLoading);
+        setIsLoading(isWaitingForResponse);
+      }
     };
 
-    const handleDidStopLoading = () => {
+    const handleDidStopLoading = (_e: any) => {
+      webview.removeEventListener("did-stop-loading", handleDidStopLoading);
       setIsLoading(false);
     };
 
     const handleDomReady = () => {
+      webview.removeEventListener("dom-ready", handleDomReady);
       setIsLoading(false);
     };
 
