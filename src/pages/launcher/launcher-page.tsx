@@ -238,7 +238,12 @@ export function LauncherPage() {
                         opacity: 0,
                         transition: { duration: 0.2 },
                       }}
-                      className={`absolute z-40 w-full h-full`}
+                      className={
+                        `absolute z-40 w-full h-full` +
+                        (activeTopTab === tab.id
+                          ? " pointer-events-auto"
+                          : " pointer-events-none")
+                      }
                     >
                       <Webview
                         tab={tab}
