@@ -57,7 +57,7 @@ export function createLauncherWindow(opened?: () => void) {
   });
 
   win.setMenu(null);
-  win.setAspectRatio(16 / 10, winSize);
+  win.setAspectRatio(16 / 10);
 
   applyDock();
   handleWebRequestInterceptors(win);
