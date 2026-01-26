@@ -13,6 +13,7 @@ interface TopNavbarProps {
   handleReorder: (tabs: BrowserTab[]) => void;
   closeTab: (e: React.MouseEvent | null, id: string) => void;
   setIsTabDragging: (isDragging: boolean) => void;
+  onOpenSettings: () => void;
 }
 
 export const TopNavbar = ({
@@ -22,6 +23,7 @@ export const TopNavbar = ({
   handleReorder,
   closeTab,
   setIsTabDragging,
+  onOpenSettings,
 }: TopNavbarProps) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   // Memoize platform check - only compute once
@@ -96,20 +98,15 @@ export const TopNavbar = ({
           />
           <button
             type="button"
+            onClick={onOpenSettings}
+            className="flex-shrink-0 flex items-center justify-center mb-2 mr-2"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-            onClick={() => {
-              setActiveTopTab("launcher");
-            }}
             aria-label="Open settings"
-            aria-pressed={activeTopTab === "launcher"}
-            className={`h-[32px] w-[32px] cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-app-accent focus-visible:outline-offset-2 focus-visible:rounded ${activeTopTab === "launcher" ? "text-app-text-primary" : "text-app-text-primary/40 hover:text-app-accent"}`}
           >
-            <div className="w-full h-full group relative flex-shrink-0  z-30 flex items-center justify-center">
-              <IconSettings
-                size={18}
-                className="text-app-text-primary/30 hover:text-app-accent transition-transform duration-500 ease-in-out hover:rotate-180 cursor-pointer outline-none"
-              />
-            </div>
+            <IconSettings
+              size={18}
+              className="text-app-text-primary/30 hover:text-app-accent transition-transform duration-500 ease-in-out hover:rotate-180 cursor-pointer outline-none"
+            />
           </button>
         </div>
 

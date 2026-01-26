@@ -1,4 +1,4 @@
-import { IconLayoutGrid, IconSettings } from "@tabler/icons-react";
+import { IconLayoutGrid } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { GAMES } from "../../constants";
@@ -11,7 +11,6 @@ interface LeftSidebarProps {
   selectedGameId: string | null;
   onShowGallery: () => void;
   onSelectGame: (gameId: string) => void;
-  onOpenSettings: () => void;
 }
 
 export function LeftSidebar({
@@ -20,7 +19,6 @@ export function LeftSidebar({
   selectedGameId,
   onShowGallery,
   onSelectGame,
-  onOpenSettings,
 }: LeftSidebarProps) {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { showTopFade, showBottomFade, checkScroll } =
@@ -48,7 +46,7 @@ export function LeftSidebar({
       animate={{ x: isVisible ? 8 : -80 }}
       exit={{ x: -80 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute flex z-20 w-[72px] h-full pb-2"
+      className="absolute flex z-20 w-[72px] h-full"
     >
       <div className="flex my-2 flex-col w-full items-center pt-3 pb-6 bg-app-primary/50 rounded-2xl shadow-lg border border-white/10 backdrop-blur-lg">
         <button
@@ -95,17 +93,6 @@ export function LeftSidebar({
             <div className="snap-start flex-shrink-0 h-12 w-full" />
           </div>
         </div>
-
-        <button
-          type="button"
-          className="mt-6 flex-shrink-0"
-          onClick={onOpenSettings}
-        >
-          <IconSettings
-            size={22}
-            className="text-app-text-primary/30 hover:text-app-accent transition-transform duration-500 ease-in-out hover:rotate-180 cursor-pointer outline-none"
-          />
-        </button>
       </div>
     </motion.div>
   );

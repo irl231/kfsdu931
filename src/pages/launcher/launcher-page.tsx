@@ -126,6 +126,7 @@ export function LauncherPage() {
         handleReorder={handleReorder}
         closeTab={closeTab}
         setIsTabDragging={setIsTabDragging}
+        onOpenSettings={handleOpenSettings}
       />
 
       <div className="flex-1 relative flex overflow-hidden">
@@ -151,7 +152,6 @@ export function LauncherPage() {
                 selectedGameId={selectedGameId}
                 onShowGallery={handleShowGallery}
                 onSelectGame={handleSelectGame}
-                onOpenSettings={handleOpenSettings}
               />
 
               <AnimatePresence>
