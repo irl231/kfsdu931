@@ -1,274 +1,195 @@
 import { appSettingsStore, storeKey } from "@electron/store";
 import { GAMES } from "@web/pages/launcher/constants";
-import type { SetActivity } from "@xhayper/discord-rpc";
 import { ipcMain } from "electron";
 import log from "electron-log";
 import { parse as parseTLD } from "tldts";
 import { channel } from "../channel";
-import { DiscordRPC } from "./rpc";
+import { DiscordRPC, type PresenceData } from "./rpc";
 
-let discordRPC: DiscordRPC | null = null;
-let currentDiscordRPCId: string | null = null;
-const currentDiscordRPC: Map<string, SetActivity> = new Map(); // Use Map for better performance
+const rpc = new DiscordRPC();
 
-let isSwitching = false;
-let pendingPresence: SetActivity | null = null;
-let switchTimeout: NodeJS.Timeout | null = null;
+// Debounce timer for presence updates
+let updateTimer: NodeJS.Timeout | null = null;
+const DEBOUNCE_MS = 300;
 
-// Debounce time in ms
-const DEBOUNCE_DELAY = 200;
-const PROCESS_RETRY_DELAY = 500;
+interface RichPresencePayload {
+  id?: string;
+  url?: string;
+  details?: string;
+  state?: string;
+  startTimestamp?: number;
+  assets?: {
+    largeImageKey?: string;
+    largeImageText?: string;
+    smallImageKey?: string;
+    smallImageText?: string;
+  };
+  buttons?: Array<{ label: string; url: string }>;
+}
 
-// Helper to validate URL
-function isValidUrl(url: string): boolean {
+function parseUrl(
+  url: string,
+): { domain: string; pathname: string; hostname: string } | null {
   try {
-    new URL(url);
-    return true;
+    const parsed = new URL(url.replace(/\/$/, ""));
+    const tld = parseTLD(parsed.hostname);
+    if (!tld.domain) return null;
+    return {
+      domain: tld.domain,
+      pathname: parsed.pathname,
+      hostname: parsed.hostname,
+    };
   } catch {
-    return false;
+    return null;
   }
 }
 
-async function processRpcUpdate(): Promise<void> {
-  if (isSwitching || !pendingPresence) return;
+function findGame(domain: string, pathname: string) {
+  const id = `${domain}-${pathname}`;
+  return GAMES.find((game) => game.id === id);
+}
 
-  isSwitching = true;
-  const presenceToApply = pendingPresence;
-  pendingPresence = null;
+function isEnabled(): boolean {
+  return appSettingsStore.get(storeKey.appSettings).discordPresence ?? false;
+}
 
-  try {
-    const isDiscordRPCEnabled = appSettingsStore.get(
-      storeKey.appSettings,
-    ).discordPresence;
+async function updatePresence(
+  payload: RichPresencePayload | string,
+): Promise<void> {
+  if (!isEnabled()) {
+    await rpc.disconnect();
+    return;
+  }
 
-    if (!isDiscordRPCEnabled) {
-      if (discordRPC) {
-        await discordRPC.destroy();
-        discordRPC = null;
-        currentDiscordRPCId = null;
-        currentDiscordRPC.clear(); // Clear Map
-      }
-      return;
-    }
+  // Handle URL-only update (tab switch)
+  if (typeof payload === "string") {
+    const urlInfo = parseUrl(payload);
+    if (!urlInfo) return;
 
-    if (discordRPC && currentDiscordRPCId === presenceToApply.applicationId) {
-      if (!presenceToApply.url || !isValidUrl(presenceToApply.url)) return;
-
-      const parsedUrl = new URL(presenceToApply.url.replace(/\/$/, ""));
-      const tld = parseTLD(parsedUrl.hostname);
-      if (!tld.domain) {
-        log.warn("[Discord RPC] Invalid domain:", parsedUrl.hostname);
-        return;
-      }
-
-      const id = `${tld.domain}-${parsedUrl.pathname}`;
-      presenceToApply.url = `${parsedUrl.protocol}//${tld.domain}`;
-
-      if (!GAMES.find((x) => x.id === id)) {
-        await discordRPC.update({
-          ...presenceToApply,
+    // If we're connected, update with browsing state
+    if (rpc.connected) {
+      const game = findGame(urlInfo.domain, urlInfo.pathname);
+      if (!game) {
+        await rpc.setActivity({
+          applicationId: rpc.currentClientId!,
           details: "🧭 Browsing",
-          state: `🌐 ${parsedUrl.hostname}${parsedUrl.pathname}`,
-          stateUrl: parsedUrl.href,
+          state: `🌐 ${urlInfo.hostname}${urlInfo.pathname}`,
+          startTimestamp: Date.now(),
         });
-      } else {
-        if (presenceToApply.state?.startsWith("🌎")) {
-          const [mapName] = presenceToApply.state
-            .replace("🌎 ", "")
-            .toLowerCase()
-            .trim()
-            .split("-");
-          presenceToApply.state = `🌎 ${mapName}`;
-        }
-        await discordRPC.update({ ...presenceToApply });
       }
-    } else {
-      if (discordRPC) {
-        await discordRPC.destroy();
-        discordRPC = null;
-      }
-
-      if (!presenceToApply.applicationId) return;
-      currentDiscordRPCId = presenceToApply.applicationId;
-
-      discordRPC = new DiscordRPC();
-      await discordRPC.init(presenceToApply);
     }
-  } catch (error) {
-    log.error("[Discord RPC] Error updating presence:", error);
-  } finally {
-    isSwitching = false;
-    if (pendingPresence) {
-      setTimeout(() => processRpcUpdate(), PROCESS_RETRY_DELAY);
-    }
+    return;
   }
+
+  // Handle full presence payload
+  const {
+    id: applicationId,
+    url,
+    details,
+    state,
+    startTimestamp,
+    assets,
+    buttons,
+  } = payload;
+
+  if (!url) return;
+
+  const urlInfo = parseUrl(url);
+  if (!urlInfo) return;
+
+  const game = findGame(urlInfo.domain, urlInfo.pathname);
+
+  // Determine which Discord application ID to use
+  const clientId = applicationId || game?.discordId;
+  if (!clientId) {
+    log.warn("[Discord RPC] No application ID available");
+    return;
+  }
+
+  // Connect if needed (handles switching between different apps)
+  const connected = await rpc.connect(clientId);
+  if (!connected) return;
+
+  // Build presence data
+  const presence: PresenceData = {
+    applicationId: clientId,
+    details,
+    state: formatState(state),
+    startTimestamp: startTimestamp ?? Date.now(),
+    largeImageKey: assets?.largeImageKey,
+    largeImageText: assets?.largeImageText,
+    smallImageKey: assets?.smallImageKey,
+    smallImageText: assets?.smallImageText,
+    buttons,
+  };
+
+  // For non-game URLs, show browsing status
+  if (!game && rpc.connected) {
+    presence.details = "🧭 Browsing";
+    presence.state = `🌐 ${urlInfo.hostname}${urlInfo.pathname}`;
+  }
+
+  await rpc.setActivity(presence);
 }
 
-export function registerDiscordRPCHandlers() {
+function formatState(state?: string): string | undefined {
+  if (!state) return undefined;
+
+  // Simplify map names (e.g., "🌎 battleon-town" -> "🌎 battleon")
+  if (state.startsWith("🌎 ")) {
+    const [mapName] = state.replace("🌎 ", "").toLowerCase().trim().split("-");
+    return `🌎 ${mapName}`;
+  }
+
+  return state;
+}
+
+export function registerDiscordRPCHandlers(): void {
   ipcMain.on(
     channel.discordRPC.update,
-    (_event, richPresenceOrUrl: Record<string, any> | string) => {
-      try {
-        if (!richPresenceOrUrl) {
-          log.warn("[Discord RPC] Received empty presence data");
-          return;
-        }
+    (_event, payload: RichPresencePayload | string) => {
+      if (!payload) return;
 
-        let richPresence: SetActivity | null = null;
-        let tld: ReturnType<typeof parseTLD>;
-
-        if (typeof richPresenceOrUrl === "string") {
-          if (!isValidUrl(richPresenceOrUrl)) {
-            log.warn("[Discord RPC] Invalid URL:", richPresenceOrUrl);
-            return;
-          }
-
-          const parsedUrl = new URL(richPresenceOrUrl.replace(/\/$/, ""));
-          tld = parseTLD(parsedUrl.hostname);
-
-          if (!tld.domain) {
-            log.warn("[Discord RPC] Invalid domain:", parsedUrl.hostname);
-            return;
-          }
-
-          richPresence = currentDiscordRPC.get(tld.domain) ?? null;
-          if (richPresence) {
-            richPresence.url = richPresenceOrUrl;
-          }
-        } else {
-          if (!richPresenceOrUrl.url || !isValidUrl(richPresenceOrUrl.url)) {
-            log.warn(
-              "[Discord RPC] Invalid presence URL:",
-              richPresenceOrUrl.url,
-            );
-            return;
-          }
-
-          const parsedUrl = new URL(richPresenceOrUrl.url.replace(/\/$/, ""));
-          tld = parseTLD(parsedUrl.hostname);
-
-          if (!tld.domain) {
-            log.warn("[Discord RPC] Invalid domain:", parsedUrl.hostname);
-            return;
-          }
-
-          richPresence = {
-            url: richPresenceOrUrl.url,
-            applicationId: richPresenceOrUrl.id,
-            details: richPresenceOrUrl.details,
-            state: richPresenceOrUrl.state,
-            startTimestamp: richPresenceOrUrl.startTimestamp,
-            secrets: richPresenceOrUrl.secrets,
-            instance: richPresenceOrUrl.instance,
-            buttons: richPresenceOrUrl.buttons,
-            partyId: richPresenceOrUrl.partyId,
-            partySize: richPresenceOrUrl.partySize,
-            partyMax: richPresenceOrUrl.partyMax,
-            joinSecret: richPresenceOrUrl.joinSecret,
-            spectateSecret: richPresenceOrUrl.spectateSecret,
-            ...richPresenceOrUrl.assets,
-          };
-        }
-
-        if (!richPresence) {
-          return;
-        }
-
-        currentDiscordRPC.set(tld.domain, richPresence);
-        pendingPresence = richPresence;
-
-        // Clear existing timeout and set new one (debouncing)
-        if (switchTimeout) clearTimeout(switchTimeout);
-        switchTimeout = setTimeout(() => {
-          processRpcUpdate();
-        }, DEBOUNCE_DELAY);
-      } catch (error) {
-        log.error("[Discord RPC] Error in update handler:", error);
-      }
+      // Debounce rapid updates
+      if (updateTimer) clearTimeout(updateTimer);
+      updateTimer = setTimeout(() => {
+        updatePresence(payload).catch((error) => {
+          log.error("[Discord RPC] Update error:", error);
+        });
+      }, DEBOUNCE_MS);
     },
   );
 
   ipcMain.on(channel.discordRPC.destroy, async (_event, url?: string) => {
-    try {
-      const isDiscordRPCEnabled = appSettingsStore.get(
-        storeKey.appSettings,
-      ).discordPresence;
+    if (!isEnabled()) return;
 
-      if (!isDiscordRPCEnabled || !discordRPC) {
-        return;
-      }
-
-      if (!url) {
-        // Clear all
-        pendingPresence = null;
-        if (switchTimeout) {
-          clearTimeout(switchTimeout);
-          switchTimeout = null;
-        }
-        await discordRPC.destroy();
-        discordRPC = null;
-        currentDiscordRPCId = null;
-        currentDiscordRPC.clear();
-        return;
-      }
-
-      if (!isValidUrl(url)) {
-        log.warn("[Discord RPC] Invalid URL for destroy:", url);
-        return;
-      }
-
-      const parsedUrl = new URL(url.replace(/\/$/, ""));
-      const tld = parseTLD(parsedUrl.hostname);
-
-      if (!tld.domain) {
-        log.warn(
-          "[Discord RPC] Invalid domain for destroy:",
-          parsedUrl.hostname,
-        );
-        return;
-      }
-
-      const id = `${tld.domain}-${parsedUrl.pathname}`;
-      const lastPresence = currentDiscordRPC.get(tld.domain);
-
-      if (!lastPresence) return;
-
-      if (GAMES.some((x) => x.id === id)) {
-        pendingPresence = null;
-        await discordRPC.destroy();
-        discordRPC = null;
-        currentDiscordRPCId = null;
-        currentDiscordRPC.delete(tld.domain);
-      }
-    } catch (error) {
-      log.error("[Discord RPC] Error in destroy handler:", error);
+    // Cancel pending updates
+    if (updateTimer) {
+      clearTimeout(updateTimer);
+      updateTimer = null;
     }
+
+    // If URL provided, only clear if it's a game URL
+    if (url) {
+      const urlInfo = parseUrl(url);
+      if (!urlInfo) return;
+
+      const game = findGame(urlInfo.domain, urlInfo.pathname);
+      if (game) {
+        await rpc.disconnect();
+      }
+      return;
+    }
+
+    // No URL = clear everything
+    await rpc.disconnect();
   });
 }
 
-// Cleanup function for graceful shutdown
-export function cleanupDiscordRPC(): Promise<void> {
-  return new Promise((resolve) => {
-    if (switchTimeout) {
-      clearTimeout(switchTimeout);
-      switchTimeout = null;
-    }
-
-    if (discordRPC) {
-      discordRPC
-        .destroy()
-        .then(() => {
-          discordRPC = null;
-          currentDiscordRPCId = null;
-          currentDiscordRPC.clear();
-          resolve();
-        })
-        .catch((error) => {
-          log.error("[Discord RPC] Error during cleanup:", error);
-          resolve();
-        });
-    } else {
-      resolve();
-    }
-  });
+export async function cleanupDiscordRPC(): Promise<void> {
+  if (updateTimer) {
+    clearTimeout(updateTimer);
+    updateTimer = null;
+  }
+  await rpc.disconnect();
 }

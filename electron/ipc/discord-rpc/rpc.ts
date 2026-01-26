@@ -1,7 +1,20 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Client, type SetActivity } from "@xhayper/discord-rpc";
+import { Client } from "@xhayper/discord-rpc";
 import type { PathData } from "@xhayper/discord-rpc/dist/transport/IPC";
+import log from "electron-log";
+
+export interface PresenceData {
+  applicationId: string;
+  details?: string;
+  state?: string;
+  startTimestamp?: number;
+  largeImageKey?: string;
+  largeImageText?: string;
+  smallImageKey?: string;
+  smallImageText?: string;
+  buttons?: Array<{ label: string; url: string }>;
+}
 
 const pathList: PathData[] = [
   {
@@ -59,101 +72,114 @@ const pathList: PathData[] = [
 ];
 
 export class DiscordRPC {
-  client?: Client;
-  lastPresence?: SetActivity;
-  ready = false;
+  private client: Client | null = null;
+  private clientId: string | null = null;
+  private isReady = false;
+  private isConnecting = false;
 
-  private formatActivity(richPresence: SetActivity) {
-    return {
-      details: richPresence.details,
-      state: richPresence.state,
-      startTimestamp: richPresence.startTimestamp,
-      endTimestamp: richPresence.endTimestamp,
-      largeImageKey: richPresence.largeImageKey,
-      largeImageText: richPresence.largeImageText,
-      smallImageKey: richPresence.smallImageKey,
-      smallImageText: richPresence.smallImageText,
-      partyId: richPresence.partyId,
-      partySize: richPresence.partySize,
-      partyMax: richPresence.partyMax,
-      joinSecret: richPresence.joinSecret,
-      spectateSecret: richPresence.spectateSecret,
-      matchSecret: richPresence.matchSecret,
-      buttons: richPresence.buttons,
-      instance: false,
-    };
+  get connected(): boolean {
+    return this.isReady && this.client !== null;
   }
 
-  async init(richPresence: SetActivity): Promise<void> {
-    this.lastPresence = richPresence;
+  get currentClientId(): string | null {
+    return this.clientId;
+  }
 
-    if (this.client) {
-      await this.destroy();
+  async connect(clientId: string): Promise<boolean> {
+    // Already connected to same client
+    if (this.clientId === clientId && this.isReady) {
+      return true;
     }
 
-    this.client = new Client({
-      clientId: richPresence.applicationId!,
-      transport: { type: "ipc", pathList },
-    });
+    // Different client - disconnect first
+    if (this.client && this.clientId !== clientId) {
+      await this.disconnect();
+    }
 
-    return new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error("Connection timeout"));
-      }, 10000);
+    // Prevent concurrent connection attempts
+    if (this.isConnecting) {
+      return false;
+    }
 
-      this.client!.on("ready", async () => {
-        clearTimeout(timeout);
-        this.ready = true;
+    this.isConnecting = true;
+    this.clientId = clientId;
 
-        if (this.lastPresence) {
-          try {
-            const activity = this.formatActivity(this.lastPresence);
-            await this.client!.user!.setActivity(activity);
-          } catch (error) {
-            reject(error);
-            return;
-          }
-        }
-        resolve();
+    try {
+      this.client = new Client({
+        clientId,
+        transport: { type: "ipc", pathList },
       });
 
-      this.client!.on("disconnected", () => {
-        clearTimeout(timeout);
-        this.ready = false;
+      this.client.on("ready", () => {
+        this.isReady = true;
+        log.info("[Discord RPC] Connected");
       });
 
-      this.client!.login()
-        .then(() => {})
-        .catch((error) => {
-          clearTimeout(timeout);
-          reject(error);
-        });
-    });
+      this.client.on("disconnected", () => {
+        this.isReady = false;
+        log.info("[Discord RPC] Disconnected");
+      });
+
+      await this.client.login();
+      return true;
+    } catch (error) {
+      log.warn("[Discord RPC] Failed to connect:", error);
+      this.client = null;
+      this.clientId = null;
+      return false;
+    } finally {
+      this.isConnecting = false;
+    }
   }
 
-  async update(richPresence: SetActivity) {
-    this.lastPresence = richPresence;
-
-    if (!this.ready || !this.client?.user) {
+  async setActivity(presence: PresenceData): Promise<void> {
+    if (!this.client?.user || !this.isReady) {
       return;
     }
 
-    const activity = this.formatActivity(richPresence);
-    await this.client.user.setActivity(activity);
+    try {
+      await this.client.user.setActivity({
+        details: presence.details,
+        state: presence.state,
+        startTimestamp: presence.startTimestamp,
+        largeImageKey: presence.largeImageKey,
+        largeImageText: presence.largeImageText,
+        smallImageKey: presence.smallImageKey,
+        smallImageText: presence.smallImageText,
+        buttons: presence.buttons,
+        instance: false,
+      });
+    } catch (error) {
+      log.warn("[Discord RPC] Failed to set activity:", error);
+    }
   }
 
-  async destroy() {
+  async clearActivity(): Promise<void> {
+    if (!this.client?.user || !this.isReady) {
+      return;
+    }
+
+    try {
+      await this.client.user.clearActivity();
+    } catch (error) {
+      log.warn("[Discord RPC] Failed to clear activity:", error);
+    }
+  }
+
+  async disconnect(): Promise<void> {
     if (!this.client) {
       return;
     }
 
-    if (this.client.user) {
-      await this.client.user.clearActivity();
+    try {
+      await this.clearActivity();
+      await this.client.destroy();
+    } catch (error) {
+      log.warn("[Discord RPC] Error during disconnect:", error);
+    } finally {
+      this.client = null;
+      this.clientId = null;
+      this.isReady = false;
     }
-    await this.client.destroy();
-
-    this.client = undefined;
-    this.ready = false;
-    this.lastPresence = undefined;
   }
 }
