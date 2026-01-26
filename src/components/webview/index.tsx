@@ -83,6 +83,9 @@ export interface BrowserTab {
   title: string;
   accent: string;
   createdAt: number;
+  webContentsId?: number;
+  isAudible?: boolean;
+  isMuted?: boolean;
 }
 
 // network error codes from Chromium (Chrome 87 / Electron 11.5.0 compatible)

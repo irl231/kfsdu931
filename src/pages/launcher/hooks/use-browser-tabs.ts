@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parse } from "tldts";
 import type { Game } from "../constants";
 
+// Map to track webContentsId to tabId
+type WebContentsToTabMap = Map<number, string>;
+
 export function useBrowserTabs() {
   const [browserTabs, setBrowserTabs] = useState<BrowserTab[]>([]);
   const [externalUrls, setExternalUrls] = useState<string[]>([]);
@@ -11,7 +14,7 @@ export function useBrowserTabs() {
   const [activeTopTab, setActiveTopTab] = useState("launcher");
 
   const tabHistoryRef = useRef<string[]>(["launcher"]);
-  const webContentsMapRef = useRef<Map<number, string>>(new Map());
+  const webContentsMapRef = useRef<WebContentsToTabMap>(new Map());
 
   // Optimize sorting: only sort when browserTabs changes
   const stableTabs = useMemo(
@@ -141,7 +144,12 @@ export function useBrowserTabs() {
         }),
       );
 
+      // Find tabs matching URL that DON'T already have a webContentsId assigned
+      // This prevents duplicate URLs from overwriting each other's webContentsId
       const loadedTab = browserTabs.find((x) => {
+        // Skip tabs that already have a webContentsId
+        if (x.webContentsId !== undefined) return false;
+
         const parsedPrevUrl = new URL(x.url.replace(/\/$/, ""));
         const prevTld = parse(parsedPrevUrl.hostname);
         return (
@@ -150,9 +158,15 @@ export function useBrowserTabs() {
         );
       });
 
-      // Store mapping of webContents ID to browser tab ID for social link closures
+      // Store mapping of webContents ID to browser tab ID
       if (loadedTab) {
         webContentsMapRef.current.set(id, loadedTab.id);
+        // Update the tab with the webContentsId
+        setBrowserTabs((prev) =>
+          prev.map((t) =>
+            t.id === loadedTab.id ? { ...t, webContentsId: id } : t,
+          ),
+        );
       }
 
       if (loadedTab) setActiveTopTab(loadedTab.id);
@@ -161,11 +175,68 @@ export function useBrowserTabs() {
     return unlisten;
   }, [browserTabs]);
 
+  // Handle audio state changes from webviews
+  useEffect(() => {
+    if (!window.electron?.onWebViewAudioStateChanged) return;
+
+    const unlisten = window.electron.onWebViewAudioStateChanged(
+      (audioState) => {
+        const { webContentsId, isAudible, isMuted } = audioState;
+
+        // Update the tab that has this webContentsId
+        // We check directly on the tab's webContentsId property for accuracy
+        setBrowserTabs((prev) =>
+          prev.map((t) =>
+            t.webContentsId === webContentsId
+              ? { ...t, isAudible, isMuted }
+              : t,
+          ),
+        );
+      },
+    );
+
+    return unlisten;
+  }, []);
+
+  // Toggle mute for a specific tab
+  const toggleMute = useCallback(
+    async (e: React.MouseEvent, tabId: string) => {
+      e.stopPropagation();
+
+      const tab = browserTabs.find((t) => t.id === tabId);
+      if (!tab?.webContentsId) return;
+
+      const newMutedState = !tab.isMuted;
+
+      try {
+        await window.electron?.setWebViewAudioMuted(
+          tab.webContentsId,
+          newMutedState,
+        );
+
+        // Optimistically update the UI
+        setBrowserTabs((prev) =>
+          prev.map((t) =>
+            t.id === tabId ? { ...t, isMuted: newMutedState } : t,
+          ),
+        );
+      } catch (error) {
+        console.error("[BrowserTabs] Error toggling mute:", error);
+      }
+    },
+    [browserTabs],
+  );
+
   const closeTab = useCallback(
     (e: React.MouseEvent | null, tabId: string) => {
       e?.stopPropagation();
       const currentTab = browserTabs.find((t) => t.id === tabId);
       if (!currentTab) return;
+
+      // Clean up the webContentsMap when tab is closed
+      if (currentTab.webContentsId !== undefined) {
+        webContentsMapRef.current.delete(currentTab.webContentsId);
+      }
 
       const remaining = browserTabs.filter((t) => t.id !== tabId);
       setBrowserTabs(remaining);
@@ -233,6 +304,12 @@ export function useBrowserTabs() {
     (tabId: string, newUrl: string) => {
       // Close tab if URL becomes about:blank (window closed or redirected away)
       if (newUrl === "about:blank") {
+        // Clean up webContentsMap for the closing tab
+        const tabToClose = browserTabs.find((t) => t.id === tabId);
+        if (tabToClose?.webContentsId !== undefined) {
+          webContentsMapRef.current.delete(tabToClose.webContentsId);
+        }
+
         setBrowserTabs((prev) => prev.filter((t) => t.id !== tabId));
 
         // Switch to another tab if the closed tab was active
@@ -246,7 +323,7 @@ export function useBrowserTabs() {
         prev.map((t) => (t.id === tabId ? { ...t, url: newUrl } : t)),
       );
     },
-    [activeTopTab],
+    [activeTopTab, browserTabs],
   );
 
   const isGameLoading = useCallback(
@@ -318,5 +395,6 @@ export function useBrowserTabs() {
     updateTabUrl,
     isGameLoading,
     isGameOpen,
+    toggleMute,
   };
 }

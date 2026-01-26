@@ -10,6 +10,7 @@ interface BrowserTabsListProps {
   onReorder: (newOrder: BrowserTab[]) => void;
   onTabClick: (tabId: string) => void;
   onTabClose: (e: any, tabId: string) => void;
+  onToggleMute: (e: React.MouseEvent, tabId: string) => void;
   setIsTabDragging: (isDragging: boolean) => void;
 }
 
@@ -19,6 +20,7 @@ export const BrowserTabsList = ({
   onReorder,
   onTabClick,
   onTabClose,
+  onToggleMute,
   setIsTabDragging,
 }: BrowserTabsListProps) => {
   const tabsScrollRef = useRef<HTMLDivElement>(null);
@@ -119,6 +121,7 @@ export const BrowserTabsList = ({
                   }
                 }}
                 onClose={(e) => onTabClose(e, tab.id)}
+                onToggleMute={(e) => onToggleMute(e, tab.id)}
               />
             </Reorder.Item>
           ))}

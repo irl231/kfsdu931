@@ -14,6 +14,12 @@ type AppPlatForm = "macos" | "windows" | "linux";
 
 type StoreName = "app-settings";
 
+interface AudioState {
+  webContentsId: number;
+  isAudible: boolean;
+  isMuted: boolean;
+}
+
 interface ElectronAPI {
   getPlatform: () => AppPlatForm;
   getAppVersion: () => Promise<string>;
@@ -39,6 +45,14 @@ interface ElectronAPI {
     cb: (url: string, senderUrl: string) => void,
   ) => VoidFunction;
   onWebViewCloseExternal: (cb: (senderUrl: string) => void) => VoidFunction;
+  onWebViewAudioStateChanged: (
+    cb: (audioState: AudioState) => void,
+  ) => VoidFunction;
+  setWebViewAudioMuted: (
+    webContentsId: number,
+    muted: boolean,
+  ) => Promise<void>;
+  getWebViewAudioState: (webContentsId: number) => Promise<AudioState | null>;
   onDiscordRPCUpdate: (richPresenceOrUrl: Record<string, any> | string) => void;
   onDiscordRPCDestroy: (hostname?: string) => void;
   openExternal: (url: string) => Promise<void>;

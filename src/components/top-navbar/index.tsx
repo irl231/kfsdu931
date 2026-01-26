@@ -12,6 +12,7 @@ interface TopNavbarProps {
   visibleTabs: BrowserTab[];
   handleReorder: (tabs: BrowserTab[]) => void;
   closeTab: (e: React.MouseEvent | null, id: string) => void;
+  toggleMute: (e: React.MouseEvent, id: string) => void;
   setIsTabDragging: (isDragging: boolean) => void;
   onOpenSettings: () => void;
   onCloseSettings: () => void;
@@ -24,6 +25,7 @@ export const TopNavbar = ({
   visibleTabs,
   handleReorder,
   closeTab,
+  toggleMute,
   setIsTabDragging,
   onOpenSettings,
   onCloseSettings,
@@ -96,6 +98,7 @@ export const TopNavbar = ({
               onReorder={handleReorder}
               onTabClick={setActiveTopTab}
               onTabClose={closeTab}
+              onToggleMute={toggleMute}
               setIsTabDragging={setIsTabDragging}
             />
           </div>

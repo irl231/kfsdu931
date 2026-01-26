@@ -52,6 +52,7 @@ export function LauncherPage() {
     updateTabUrl,
     isGameLoading,
     isGameOpen,
+    toggleMute,
   } = useBrowserTabs();
 
   // Memoize computed value to avoid recalculation
@@ -125,6 +126,7 @@ export function LauncherPage() {
         visibleTabs={visibleTabs}
         handleReorder={handleReorder}
         closeTab={closeTab}
+        toggleMute={toggleMute}
         setIsTabDragging={setIsTabDragging}
         onOpenSettings={handleOpenSettings}
         onCloseSettings={handleCloseSettings}

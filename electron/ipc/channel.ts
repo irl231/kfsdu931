@@ -30,6 +30,9 @@ export const channel = {
     swfReady: "webview-swf-ready",
     openExternal: "webview-open-external",
     closeExternal: "webview-close-external",
+    audioStateChanged: "webview-audio-state-changed",
+    setAudioMuted: "webview-set-audio-muted",
+    getAudioState: "webview-get-audio-state",
   },
   shell: {
     openExternal: "shell-open-external",

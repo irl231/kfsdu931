@@ -125,6 +125,26 @@ const api: ElectronAPI = {
       );
     };
   },
+  onWebViewAudioStateChanged: (cb) => {
+    const audioStateHandler = (
+      _event: IpcRendererEvent,
+      audioState: AudioState,
+    ) => {
+      cb(audioState);
+    };
+    ipcRenderer.on(channel.webview.audioStateChanged, audioStateHandler);
+
+    return () => {
+      ipcRenderer.removeListener(
+        channel.webview.audioStateChanged,
+        audioStateHandler,
+      );
+    };
+  },
+  setWebViewAudioMuted: (webContentsId: number, muted: boolean) =>
+    ipcRenderer.invoke(channel.webview.setAudioMuted, webContentsId, muted),
+  getWebViewAudioState: (webContentsId: number) =>
+    ipcRenderer.invoke(channel.webview.getAudioState, webContentsId),
   onDiscordRPCUpdate: (richPresenceOrUrl: Record<string, any> | string) => {
     if (typeof richPresenceOrUrl === "string") {
       return ipcRenderer.send(channel.discordRPC.update, richPresenceOrUrl);
