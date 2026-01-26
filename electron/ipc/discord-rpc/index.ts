@@ -106,11 +106,7 @@ async function updatePresence(
     return;
   }
 
-  // Connect if needed (handles switching between different apps)
-  const connected = await rpc.connect(clientId);
-  if (!connected) return;
-
-  // Build presence data
+  // Build presence data first (before connection attempt)
   const presence: PresenceData = {
     applicationId: clientId,
     details,
@@ -124,10 +120,18 @@ async function updatePresence(
   };
 
   // For non-game URLs, show browsing status
-  if (!game && rpc.connected) {
+  if (!game) {
     presence.details = "🧭 Browsing";
     presence.state = `🌐 ${urlInfo.hostname}${urlInfo.pathname}`;
   }
+
+  // Store presence for reconnection (even if connection fails)
+  // This ensures presence is restored when Discord becomes available
+  rpc.storePresence(presence);
+
+  // Connect if needed (handles switching between different apps)
+  const connected = await rpc.connect(clientId);
+  if (!connected) return;
 
   await rpc.setActivity(presence);
 }

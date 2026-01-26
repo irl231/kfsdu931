@@ -100,6 +100,15 @@ export class DiscordRPC {
     return this.clientId;
   }
 
+  /**
+   * Store presence data for restoration after reconnection.
+   * Called before connection attempt to ensure presence is preserved
+   * even if the initial connection fails.
+   */
+  storePresence(presence: PresenceData): void {
+    this.lastPresence = presence;
+  }
+
   private clearReconnectTimer(): void {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
