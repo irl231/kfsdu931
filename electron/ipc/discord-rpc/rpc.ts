@@ -16,6 +16,14 @@ export interface PresenceData {
   buttons?: Array<{ label: string; url: string }>;
 }
 
+// Auto-reconnect configuration
+const RECONNECT_CONFIG = {
+  initialDelay: 1000, // 1 second
+  maxDelay: 30000, // 30 seconds max
+  multiplier: 2, // Exponential backoff
+  maxAttempts: 10, // Max reconnect attempts before giving up
+} as const;
+
 const pathList: PathData[] = [
   {
     platform: ["win32"],
@@ -77,6 +85,13 @@ export class DiscordRPC {
   private isReady = false;
   private isConnecting = false;
 
+  // Auto-reconnect state
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private reconnectAttempts = 0;
+  private shouldReconnect = false;
+  private lastPresence: PresenceData | null = null;
+  private isManualDisconnect = false;
+
   get connected(): boolean {
     return this.isReady && this.client !== null;
   }
@@ -85,7 +100,79 @@ export class DiscordRPC {
     return this.clientId;
   }
 
-  async connect(clientId: string): Promise<boolean> {
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+  }
+
+  private getReconnectDelay(): number {
+    const delay = Math.min(
+      RECONNECT_CONFIG.initialDelay *
+        RECONNECT_CONFIG.multiplier ** this.reconnectAttempts,
+      RECONNECT_CONFIG.maxDelay,
+    );
+    return delay;
+  }
+
+  private scheduleReconnect(): void {
+    // Don't reconnect if manually disconnected or no client ID
+    if (this.isManualDisconnect || !this.clientId || !this.shouldReconnect) {
+      return;
+    }
+
+    // Max attempts reached
+    if (this.reconnectAttempts >= RECONNECT_CONFIG.maxAttempts) {
+      log.warn("[Discord RPC] Max reconnect attempts reached, giving up");
+      this.reconnectAttempts = 0;
+      return;
+    }
+
+    this.clearReconnectTimer();
+
+    const delay = this.getReconnectDelay();
+    log.info(
+      `[Discord RPC] Scheduling reconnect attempt ${this.reconnectAttempts + 1}/${RECONNECT_CONFIG.maxAttempts} in ${delay}ms`,
+    );
+
+    this.reconnectTimer = setTimeout(async () => {
+      if (!this.shouldReconnect || this.isManualDisconnect) {
+        return;
+      }
+
+      this.reconnectAttempts++;
+      const clientId = this.clientId;
+
+      if (!clientId) {
+        return;
+      }
+
+      // Reset state for fresh connection attempt
+      this.client = null;
+      this.isReady = false;
+
+      const success = await this.connect(clientId, true);
+
+      if (success) {
+        log.info("[Discord RPC] Reconnected successfully");
+        this.reconnectAttempts = 0;
+
+        // Restore last presence if available
+        if (this.lastPresence) {
+          await this.setActivity(this.lastPresence);
+        }
+      } else {
+        // Schedule next attempt
+        this.scheduleReconnect();
+      }
+    }, delay);
+  }
+
+  async connect(
+    clientId: string,
+    isReconnectAttempt = false,
+  ): Promise<boolean> {
     // Already connected to same client
     if (this.clientId === clientId && this.isReady) {
       return true;
@@ -103,6 +190,8 @@ export class DiscordRPC {
 
     this.isConnecting = true;
     this.clientId = clientId;
+    this.isManualDisconnect = false;
+    this.shouldReconnect = true;
 
     try {
       this.client = new Client({
@@ -112,12 +201,20 @@ export class DiscordRPC {
 
       this.client.on("ready", () => {
         this.isReady = true;
+        this.reconnectAttempts = 0; // Reset on successful connection
         log.info("[Discord RPC] Connected");
       });
 
       this.client.on("disconnected", () => {
+        const wasReady = this.isReady;
         this.isReady = false;
+        this.client = null;
         log.info("[Discord RPC] Disconnected");
+
+        // Only auto-reconnect if we were previously connected and it's not manual
+        if (wasReady && !this.isManualDisconnect && this.shouldReconnect) {
+          this.scheduleReconnect();
+        }
       });
 
       await this.client.login();
@@ -125,7 +222,17 @@ export class DiscordRPC {
     } catch (error) {
       log.warn("[Discord RPC] Failed to connect:", error);
       this.client = null;
-      this.clientId = null;
+      // Don't reset clientId - keep it for reconnection
+
+      // Schedule reconnect on initial connection failure too (Discord not running)
+      if (
+        !isReconnectAttempt &&
+        this.shouldReconnect &&
+        !this.isManualDisconnect
+      ) {
+        this.scheduleReconnect();
+      }
+
       return false;
     } finally {
       this.isConnecting = false;
@@ -133,6 +240,9 @@ export class DiscordRPC {
   }
 
   async setActivity(presence: PresenceData): Promise<void> {
+    // Store presence for reconnection restoration
+    this.lastPresence = presence;
+
     if (!this.client?.user || !this.isReady) {
       return;
     }
@@ -155,6 +265,8 @@ export class DiscordRPC {
   }
 
   async clearActivity(): Promise<void> {
+    this.lastPresence = null; // Clear stored presence
+
     if (!this.client?.user || !this.isReady) {
       return;
     }
@@ -167,7 +279,16 @@ export class DiscordRPC {
   }
 
   async disconnect(): Promise<void> {
+    // Mark as manual disconnect to prevent auto-reconnect
+    this.isManualDisconnect = true;
+    this.shouldReconnect = false;
+    this.clearReconnectTimer();
+    this.reconnectAttempts = 0;
+    this.lastPresence = null;
+
     if (!this.client) {
+      this.clientId = null;
+      this.isReady = false;
       return;
     }
 
