@@ -181,6 +181,7 @@ export function buildElectron(electronOutDir: string): OnAfterBuild {
           electronCompile: false,
           forceCodeSigning: false,
           detectUpdateChannel: false,
+          generateUpdatesFilesForAllChannels: false,
           removePackageScripts: true,
           removePackageKeywords: true,
           buildDependenciesFromSource: false,
