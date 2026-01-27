@@ -132,11 +132,16 @@ export default defineConfig(({ env }) => {
           pluginBabel({
             include: /\.[jt]sx$/,
             babelLoaderOptions: (opts) => {
+              opts.comments = false;
+              opts.compact = false;
+
               opts.plugins ??= [];
               opts.plugins.unshift([
                 "babel-plugin-react-compiler",
                 { target: "19" },
               ]);
+
+              opts.plugins.push;
             },
           }),
         ],

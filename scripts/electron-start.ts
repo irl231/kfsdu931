@@ -7,6 +7,7 @@ const ignored = [
   "The default of contextIsolation is deprecated",
   "WebContents was just created with both webviewTag and contextIsolation enabled",
   "ELECTRON_GUEST_VIEW_MANAGER_CALL",
+  "[.DisplayCompositor]",
 ];
 
 let electronProcess: childProcess.ChildProcessWithoutNullStreams | null = null;

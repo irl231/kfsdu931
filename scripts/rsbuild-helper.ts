@@ -8,6 +8,7 @@ import {
   type Rspack,
 } from "@rsbuild/core";
 
+import { ObfuscatorPlugin } from "obfuscator-webpack-plugin";
 import { buildElectron } from "./electron-build";
 import { restartElectron, startElectron } from "./electron-start";
 
@@ -226,7 +227,7 @@ const createEnvConfig = (
               cacheGroups: {
                 vendor: {
                   test: /[\\/]node_modules[\\/]/,
-                  name: "vendors",
+                  name: "lib-vendors",
                   chunks: "all",
                   priority: 10,
                   reuseExistingChunk: true,
@@ -243,8 +244,14 @@ const createEnvConfig = (
                   chunks: "all",
                   priority: 20,
                 },
+                icons: {
+                  test: /node_modules[\\/]@tabler[\\/]/,
+                  name: "lib-icons",
+                  chunks: "all",
+                  priority: 20,
+                },
                 utils: {
-                  name: "common",
+                  name: "lib-common",
                   minChunks: 2,
                   chunks: "all",
                   priority: 5,
@@ -290,6 +297,18 @@ const createEnvConfig = (
             _config.optimization.runtimeChunk = {
               name: (entry) => `runtime-${entry.name}`,
             };
+
+            _config.optimization.minimize = config.isProdBuild;
+            _config.optimization.minimizer ??= [];
+            _config.optimization.minimizer.push(
+              new ObfuscatorPlugin({
+                assumptions: {
+                  csp: false,
+                  hmr: _config.devServer?.hot === true,
+                  nodeEnv: config.isProdBuild ? "production" : "development",
+                },
+              }),
+            );
 
             extraSetup?.(_config, utils);
           },

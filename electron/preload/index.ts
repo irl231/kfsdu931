@@ -145,7 +145,9 @@ const api: ElectronAPI = {
     const url = window.location.href;
     const presence = {
       ...richPresenceOrUrl,
-      ...(!url.includes("localhost") ? { url } : {}),
+      ...(!(url.includes("localhost") || url.startsWith("file://"))
+        ? { url }
+        : {}),
     };
     ipcRenderer.send(channel.discordRPC.update, presence);
   },

@@ -57,7 +57,7 @@ export function createLauncherWindow(opened?: () => void) {
       webviewTag: true,
       webSecurity: true,
       plugins: true,
-      devTools: IS_DEV,
+      devTools: true, //IS_DEV,
     },
   });
 
