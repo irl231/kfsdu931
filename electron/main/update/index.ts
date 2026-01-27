@@ -5,8 +5,8 @@ import { app, net } from "electron";
 import log from "electron-log";
 import { ASSET_PATH, sleep } from "../utils";
 
-const REPO_OWNER = "2dragonly";
-const REPO_NAME = "testt";
+const REPO_OWNER = "irl231";
+const REPO_NAME = "kfsdu931";
 const GITHUB_API_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
 
 interface GitHubAsset {
