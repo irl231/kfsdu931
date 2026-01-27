@@ -4,10 +4,12 @@ export const AudioToggle = ({
   accent,
   isMuted,
   onClick,
+  className = "",
 }: {
   accent: string;
   isMuted: boolean;
   onClick: (e: React.MouseEvent) => void;
+  className?: string;
 }) => {
   return (
     <button
@@ -16,13 +18,13 @@ export const AudioToggle = ({
       onPointerDown={(e) => e.stopPropagation()}
       aria-label={isMuted ? "Unmute tab" : "Mute tab"}
       aria-pressed={isMuted}
-      className="p-0 rounded-full outline-none bg-transparent flex items-center justify-center"
+      className={`p-2 outline-none bg-transparent flex items-center justify-center ${className}`}
       style={{ color: accent }}
     >
       {isMuted ? (
-        <IconVolumeOff size={10} strokeWidth={2.5} className="flex-shrink-0" />
+        <IconVolumeOff size={12} strokeWidth={2.5} className="flex-shrink-0" />
       ) : (
-        <IconVolume size={10} strokeWidth={2.5} className="flex-shrink-0" />
+        <IconVolume size={12} strokeWidth={2.5} className="flex-shrink-0" />
       )}
     </button>
   );

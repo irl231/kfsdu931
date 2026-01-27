@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { deepClone, sortKeys } from "@electron/main/utils";
 import { Client } from "@xhayper/discord-rpc";
 import type { PathData } from "@xhayper/discord-rpc/dist/transport/IPC";
 import log from "electron-log";
@@ -79,6 +80,22 @@ const pathList: PathData[] = [
   },
 ];
 
+function normalizeActivityForCompare(activity: PresenceData) {
+  const copy = deepClone(activity) || {};
+  if (copy.startTimestamp) copy.startTimestamp = 0;
+  return sortKeys(copy);
+}
+
+function isTimestampsDifferent(
+  activityA: PresenceData,
+  activityB: PresenceData,
+): boolean {
+  const aStart = activityA?.startTimestamp ?? 0;
+  const bStart = activityB?.startTimestamp ?? 0;
+  const diff = Math.abs(aStart - bStart);
+  return diff >= 2000;
+}
+
 export class DiscordRPC {
   private client: Client | null = null;
   private clientId: string | null = null;
@@ -105,8 +122,8 @@ export class DiscordRPC {
    * Called before connection attempt to ensure presence is preserved
    * even if the initial connection fails.
    */
-  storePresence(presence: PresenceData): void {
-    this.lastPresence = presence;
+  storePresence(presence?: PresenceData): void {
+    this.lastPresence = presence || null;
   }
 
   private clearReconnectTimer(): void {
@@ -141,7 +158,7 @@ export class DiscordRPC {
     this.clearReconnectTimer();
 
     const delay = this.getReconnectDelay();
-    log.info(
+    log.debug(
       `[Discord RPC] Scheduling reconnect attempt ${this.reconnectAttempts + 1}/${RECONNECT_CONFIG.maxAttempts} in ${delay}ms`,
     );
 
@@ -164,7 +181,7 @@ export class DiscordRPC {
       const success = await this.connect(clientId, true);
 
       if (success) {
-        log.info("[Discord RPC] Reconnected successfully");
+        log.debug("[Discord RPC] Reconnected successfully");
         this.reconnectAttempts = 0;
 
         // Restore last presence if available
@@ -211,14 +228,14 @@ export class DiscordRPC {
       this.client.on("ready", () => {
         this.isReady = true;
         this.reconnectAttempts = 0; // Reset on successful connection
-        log.info("[Discord RPC] Connected");
+        log.debug("[Discord RPC] Connected");
       });
 
       this.client.on("disconnected", () => {
         const wasReady = this.isReady;
         this.isReady = false;
         this.client = null;
-        log.info("[Discord RPC] Disconnected");
+        log.debug("[Discord RPC] Disconnected");
 
         // Only auto-reconnect if we were previously connected and it's not manual
         if (wasReady && !this.isManualDisconnect && this.shouldReconnect) {
@@ -248,6 +265,13 @@ export class DiscordRPC {
     }
   }
 
+  compareActivities(presence: PresenceData): boolean {
+    if (!this.lastPresence) return false;
+    const a = JSON.stringify(normalizeActivityForCompare(presence));
+    const b = JSON.stringify(normalizeActivityForCompare(this.lastPresence));
+    return a === b && !isTimestampsDifferent(presence, this.lastPresence);
+  }
+
   async setActivity(presence: PresenceData): Promise<void> {
     // Store presence for reconnection restoration
     this.lastPresence = presence;
@@ -258,6 +282,7 @@ export class DiscordRPC {
 
     try {
       await this.client.user.setActivity({
+        applicationId: presence.applicationId,
         details: presence.details,
         state: presence.state,
         startTimestamp: presence.startTimestamp,
@@ -266,7 +291,7 @@ export class DiscordRPC {
         smallImageKey: presence.smallImageKey,
         smallImageText: presence.smallImageText,
         buttons: presence.buttons,
-        instance: false,
+        instance: true,
       });
     } catch (error) {
       log.warn("[Discord RPC] Failed to set activity:", error);
@@ -303,7 +328,9 @@ export class DiscordRPC {
 
     try {
       await this.clearActivity();
+      this.client.removeAllListeners();
       await this.client.destroy();
+      log.debug("[Discord RPC] Disconnected successfully");
     } catch (error) {
       log.warn("[Discord RPC] Error during disconnect:", error);
     } finally {

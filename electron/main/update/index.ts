@@ -240,6 +240,12 @@ export const downloadUpdate = async (
   });
 };
 
+export const relaunchApp = () => {
+  log.debug("relaunching app...");
+  app.relaunch();
+  app.exit(0);
+};
+
 export const applyUpdate = async (zipPath: string) => {
   log.debug("applying update...");
 
@@ -247,9 +253,7 @@ export const applyUpdate = async (zipPath: string) => {
     const zip = new AdmZip(zipPath);
     zip.extractAllTo(path.join(ASSET_PATH, "..", ".."), true);
     log.debug("update extracted successfully.");
-
-    app.relaunch();
-    app.exit(0);
+    relaunchApp();
   } catch (error) {
     log.error("failed to apply update:", error);
     throw error;

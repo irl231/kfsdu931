@@ -90,7 +90,7 @@ export const GAMES: Game[] = [
       game: "https://game.aq.com/game/",
     },
     desc: "A free, massively multiplayer game that plays in your browser! Battle monsters and obtain legendary weapons.",
-    discordId: "79860635443376128",
+    discordId: "",
   },
   {
     name: "Aetheria",
@@ -100,7 +100,7 @@ export const GAMES: Game[] = [
       game: "https://aetheria.asia/game/browser",
     },
     desc: "Aetheria is a fantasy MMORPG where your journey begins as a Novice and evolves through a deep skill tree system.",
-    discordId: "1372089438351528026",
+    discordId: "1349043609936199681",
   },
   {
     name: "RedHero",
@@ -110,7 +110,7 @@ export const GAMES: Game[] = [
       game: "https://redhero.online/game/browser",
     },
     desc: `RedHero is a completely free-to-play online MMORPG that will surely know how to keep you busy!`,
-    discordId: "806658757081301053",
+    discordId: "368443794540068875",
   },
   {
     name: "Augoeides",
@@ -120,7 +120,7 @@ export const GAMES: Game[] = [
       game: "https://augo.pw/game",
     },
     desc: "An up to date AQWorlds Private Server, fully functioning, with all the AQWorlds features you love.",
-    discordId: "573062682366836746",
+    discordId: "",
   },
   {
     name: "RedAQ",
@@ -130,7 +130,7 @@ export const GAMES: Game[] = [
       game: "https://redaq.net/game/browser",
     },
     desc: "RedAQ invites you to step into a thrilling MMORPG online game experience with custom events.",
-    discordId: "806658757081301053",
+    discordId: "807540639138185246",
   },
   {
     name: "EverRealm",
@@ -140,7 +140,7 @@ export const GAMES: Game[] = [
       game: "https://everrealm.online/game/browser",
     },
     desc: "EverRealm Online is an MMORPG designed to bring players together from around the globe.",
-    discordId: "1368872908952440884",
+    discordId: "1354393419585290300",
   },
   {
     name: "NullWorld",
@@ -150,7 +150,7 @@ export const GAMES: Game[] = [
       game: "https://nullworld.net/game/browser",
     },
     desc: "Free mmorpg online game, pass the level, evolve, make friends.",
-    discordId: "991776332897853510",
+    discordId: "728713238845325433",
   },
   {
     name: "Adventura",
@@ -160,7 +160,7 @@ export const GAMES: Game[] = [
       game: "https://adventura.quest/game/browser",
     },
     desc: "Adventura invites you to step into a thrilling MMORPG online game experience.",
-    discordId: "1319596360332349442",
+    discordId: "",
   },
   {
     name: "Altherion",

@@ -1,3 +1,4 @@
+import type { AppSettings, DiscordActivity } from "@electron/config";
 import type { BrowserTab } from "@web/components/webview";
 import { findGameByUrl } from "@web/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -47,15 +48,34 @@ export function useBrowserTabs() {
   // handle Discord RPC updates
   useEffect(() => {
     if (activeTopTab === "launcher") {
-      if (browserTabs.length <= 0) window.electron.onDiscordRPCDestroy();
+      window.electron
+        .getStore<{
+          appSettings?: AppSettings;
+        }>("app-settings")
+        .then((store) => {
+          if (store?.appSettings) {
+            const newSettings = {
+              ...store.appSettings,
+              activeTabURL: undefined,
+            };
+            window.electron.setStore("app-settings", {
+              appSettings: newSettings,
+            });
+          }
+        });
       return;
     }
 
-    const tab = browserTabs.find((t) => t.id === activeTopTab);
+    const tab = visibleTabs.find((t) => t.id === activeTopTab);
     if (!tab?.url) return;
+    const parsedUrl = new URL(tab.url.replace(/\/$/, ""));
+    const tabTld = parse(parsedUrl.hostname);
+    const game = findGameByUrl(parsedUrl.href);
 
     window.electron
-      .getStore<{ appSettings?: Record<string, unknown> }>("app-settings")
+      .getStore<{
+        appSettings?: AppSettings;
+      }>("app-settings")
       .then((store) => {
         if (store?.appSettings) {
           const newSettings = { ...store.appSettings, activeTabURL: tab.url };
@@ -65,8 +85,46 @@ export function useBrowserTabs() {
         }
       });
 
-    window.electron.onDiscordRPCUpdate(tab.url);
-  }, [activeTopTab, browserTabs]);
+    window.electron
+      .getStore<{
+        discordActivity?: DiscordActivity;
+      }>("discord-activity")
+      .then((store) => {
+        if (store?.discordActivity) {
+          let activityForTab: RichPresencePayload | undefined;
+          if (tabTld.domain) {
+            for (const [clientId, payload] of Object.entries(
+              store.discordActivity,
+            )) {
+              if (clientId === "default") continue;
+              if (payload.url?.includes(tabTld.domain)) {
+                activityForTab = { ...payload };
+                break;
+              }
+            }
+          }
+
+          if (game && !tab.url.startsWith(game.url.game || "")) {
+            activityForTab = {
+              ...activityForTab,
+              id: game.discordId,
+              url: tab.url,
+              details: "🧭 Browsing",
+              state: `🌐 ${parsedUrl.hostname}${parsedUrl.pathname}`,
+            };
+          }
+
+          if (activityForTab?.id) {
+            console.log(`[DiscordRPC] Updating presence for tab: ${tab.url}`);
+            window.electron.onDiscordRPCUpdate(activityForTab);
+          } else {
+            console.log(
+              `[DiscordRPC] No specific presence found for tab, using URL: ${tab.url} which domain is ${tabTld.domain}`,
+            );
+          }
+        }
+      });
+  }, [activeTopTab, visibleTabs]);
 
   // handle external URL opens
   useEffect(() => {
@@ -245,13 +303,24 @@ export function useBrowserTabs() {
       tabHistoryRef.current = newHistory;
 
       if (activeTopTab === tabId) {
-        window.electron.onDiscordRPCDestroy(currentTab.url);
-
         const visibleTabsList = visibleTabs;
         const closedTabIndex = visibleTabsList.findIndex((t) => t.id === tabId);
         const remainingVisible = visibleTabsList.filter((t) => t.id !== tabId);
 
         let nextTabId: string | null = null;
+
+        const closedTabDomain = parse(currentTab.url).domain;
+        const tabsWithSameDomain = remainingVisible.filter((t) => {
+          const tDomain = parse(new URL(t.url).hostname).domain;
+          return tDomain === closedTabDomain;
+        });
+
+        if (tabsWithSameDomain.length <= 0) {
+          console.log(
+            `[DiscordRPC] Closed last tab of domain ${closedTabDomain}, destroying presence.`,
+          );
+          window.electron.onDiscordRPCDestroy(currentTab.url);
+        }
 
         if (remainingVisible.length > 0) {
           if (closedTabIndex > 0)

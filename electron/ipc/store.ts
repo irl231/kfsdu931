@@ -1,11 +1,14 @@
-import { appSettingsStore } from "@electron/store";
+import { appSettingsStore, discordActivityStore } from "@electron/store";
 import { ipcMain } from "electron";
 import log from "electron-log";
 import { channel } from "./channel";
 
 // Validate store name
 function isValidStoreName(name: unknown): name is StoreName {
-  return typeof name === "string" && name === "app-settings";
+  return (
+    typeof name === "string" &&
+    (name === "app-settings" || name === "discord-activity")
+  );
 }
 
 export function registerStoreHandlers() {
@@ -18,6 +21,8 @@ export function registerStoreHandlers() {
 
       if (name === "app-settings") {
         return appSettingsStore.store;
+      } else if (name === "discord-activity") {
+        return discordActivityStore.store;
       }
 
       return null;
@@ -48,6 +53,9 @@ export function registerStoreHandlers() {
       if (name === "app-settings") {
         appSettingsStore.set(value);
         return { success: true };
+      } else if (name === "discord-activity") {
+        discordActivityStore.set(value);
+        return { success: true };
       }
 
       return { success: false, error: "Unknown store" };
@@ -66,6 +74,9 @@ export function registerStoreHandlers() {
 
       if (name === "app-settings") {
         appSettingsStore.clear();
+        return true;
+      } else if (name === "discord-activity") {
+        discordActivityStore.clear();
         return true;
       }
 

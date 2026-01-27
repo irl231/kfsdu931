@@ -62,9 +62,10 @@ export const TabItem = ({
       <TabPanel isActive={isActive} />
       <div className="relative z-50 h-full flex items-center justify-between gap-2 pl-3 pr-2 py-1.5 transition-colors">
         <div className="flex items-center gap-2 overflow-hidden flex-1">
-          <div className="w-2.5 h-2.5 flex-shrink-0 flex items-center justify-center overflow-hidden">
+          <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center overflow-hidden">
             {showAudioToggle && onToggleMute ? (
               <AudioToggle
+                className="border border-transparent rounded-md hover:bg-white/5 hover:border-white/15 transition-colors duration-200"
                 accent={tab.accent}
                 isMuted={isMuted}
                 onClick={onToggleMute}

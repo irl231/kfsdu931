@@ -150,14 +150,14 @@ export function handleWebRequestInterceptors(
     senderUrlForClose?: string,
   ): Promise<void> => {
     try {
-      log.info(`[Intercept] ${reason}: ${url}`);
+      log.debug(`[Intercept] ${reason}: ${url}`);
       await shell.openExternal(url, { activate: true });
 
       // Send close signal with sender URL for identification
       if (senderUrlForClose) {
         if (!isSocialDomain(safeParseUrl(senderUrlForClose)?.hostname || ""))
           return;
-        log.info(
+        log.debug(
           `[Intercept] Sending close signal for sender: ${senderUrlForClose}`,
         );
         const mainWindow = BrowserWindow.getAllWindows()[0];
@@ -165,7 +165,7 @@ export function handleWebRequestInterceptors(
           // Send close signal with a small delay to ensure external app opens first
           setTimeout(() => {
             if (!mainWindow.isDestroyed()) {
-              log.info(`[Intercept] Sending closeExternal IPC message`);
+              log.debug(`[Intercept] Sending closeExternal IPC message`);
               mainWindow.webContents.send(
                 channel.webview.closeExternal,
                 senderUrlForClose,

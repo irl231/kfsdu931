@@ -1,10 +1,15 @@
 import path from "node:path";
 import { channel } from "@electron/ipc/channel";
-import { DIST_PATH, getMacIconPath, IS_DEV } from "@electron/main/utils";
-import { BrowserWindow, ipcMain, screen } from "electron";
+import {
+  DIST_PATH,
+  getMacIconPath,
+  getUsedDisplay,
+  IS_DEV,
+} from "@electron/main/utils";
+import { BrowserWindow, ipcMain } from "electron";
 
 export function createSplashWindow() {
-  const { workArea: primaryDisplay } = screen.getPrimaryDisplay();
+  const { workArea: primaryDisplay } = getUsedDisplay();
   const biggest = Math.max(primaryDisplay.width, primaryDisplay.height) * 0.4;
   const size = {
     width: ~~biggest,

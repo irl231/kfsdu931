@@ -1,4 +1,5 @@
 export interface AppSettings {
+  lastDisplayId?: number;
   backgroundColor: string;
   contentBackgroundColor: string;
   primaryColor: string;
@@ -7,7 +8,12 @@ export interface AppSettings {
   autoStart: boolean;
   hiddenMenuKeys: string[];
   discordPresence: boolean;
-  activeTabURL: string;
+  activeTabURL?: string;
+}
+
+export interface DiscordActivity {
+  [applicationId: string]: RichPresencePayload;
+  ["default"]: RichPresencePayload;
 }
 
 export const defaultAppSettings: AppSettings = {

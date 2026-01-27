@@ -1,7 +1,11 @@
 import "../polyfills/event";
 import { registerIpcHandlers } from "@electron/ipc";
 import { cleanupDiscordRPC } from "@electron/ipc/discord-rpc";
-import { appSettingsStore, storeKey } from "@electron/store";
+import {
+  appSettingsStore,
+  discordActivityStore,
+  storeKey,
+} from "@electron/store";
 import { app, type BrowserWindow } from "electron";
 import log from "electron-log";
 import { getCurrentDisplayMode } from "win-screen-resolution";
@@ -36,7 +40,7 @@ if (process.platform === "win32") {
           : "1.75"
         : "1";
     app.commandLine.appendSwitch("force-device-scale-factor", forceScale);
-    log.info(`[Main] Applied DPI scaling: ${forceScale}`);
+    log.debug(`[Main] Applied DPI scaling: ${forceScale}`);
   } catch (error) {
     log.error("[Main] Error setting DPI scale:", error);
   }
@@ -52,19 +56,21 @@ let isCleaningUp = false;
 try {
   registerFlash();
   registerIpcHandlers();
-  log.info("[Main] IPC handlers registered successfully");
+  log.debug("[Main] IPC handlers registered successfully");
 } catch (error) {
   log.error("[Main] Error registering handlers:", error);
 }
 
 // Optimize app startup with proper async handling
 app.whenReady().then(async () => {
+  discordActivityStore.clear();
+
   try {
     if (process.platform === "win32") {
       app.setAppUserModelId("dev.lazuee.aqwps");
     }
 
-    log.info("[Main] App ready, initializing windows...");
+    log.debug("[Main] App ready, initializing windows...");
 
     const splash = await createSplashWindow();
     await initUpdate(splash.setState);
@@ -76,7 +82,7 @@ app.whenReady().then(async () => {
     await sleep(500);
 
     mainWin = await createLauncherWindow(splash.close);
-    log.info("[Main] Launcher window created successfully");
+    log.debug("[Main] Launcher window created successfully");
   } catch (error) {
     log.error("[Main] Error during app initialization:", error);
     app.quit();
@@ -88,11 +94,11 @@ app
   .on("before-quit", async (event) => {
     // Prevent infinite loop by checking if we're already cleaning up
     if (isCleaningUp) {
-      log.info("[Main] Cleanup already in progress, allowing quit");
+      log.debug("[Main] Cleanup already in progress, allowing quit");
       return;
     }
 
-    log.info("[Main] App shutting down...");
+    log.debug("[Main] App shutting down...");
     setQuitting(true);
     isCleaningUp = true;
 
@@ -102,17 +108,20 @@ app
     try {
       // Clean up Discord RPC
       await cleanupDiscordRPC();
-      log.info("[Main] Discord RPC cleaned up");
+      log.debug("[Main] Discord RPC cleaned up");
     } catch (error) {
       log.error("[Main] Error cleaning up Discord RPC:", error);
     }
+
+    // Allow some time for cleanup operations
+    await sleep(500);
 
     // Now quit for real
     app.quit();
   })
   .on("will-quit", () => {
     if (IS_DEV) {
-      log.info("[Main] Dev mode - force exit");
+      log.debug("[Main] Dev mode - force exit");
       process.exit(0);
     }
   })
@@ -124,7 +133,7 @@ app
 
       if (process.platform !== "darwin" || closeWindowOption === "exit") {
         if (mainWin?.isDestroyed() || !mainWin) {
-          log.info("[Main] All windows closed, quitting app");
+          log.debug("[Main] All windows closed, quitting app");
           app.quit();
         }
       }
@@ -150,7 +159,7 @@ app
       }
 
       mainWin.focus();
-      log.info("[Main] Window restored via activate event");
+      log.debug("[Main] Window restored via activate event");
     }
   });
 

@@ -12,12 +12,27 @@ declare module "*.svg?react" {
 
 type AppPlatForm = "macos" | "windows" | "linux";
 
-type StoreName = "app-settings";
+type StoreName = "app-settings" | "discord-activity";
 
 interface AudioState {
   webContentsId: number;
   isAudible: boolean;
   isMuted: boolean;
+}
+
+interface RichPresencePayload {
+  id?: string;
+  url?: string;
+  details?: string;
+  state?: string;
+  startTimestamp?: number;
+  assets?: {
+    largeImageKey?: string;
+    largeImageText?: string;
+    smallImageKey?: string;
+    smallImageText?: string;
+  };
+  buttons?: Array<{ label: string; url: string }>;
 }
 
 interface ElectronAPI {
@@ -53,7 +68,7 @@ interface ElectronAPI {
     muted: boolean,
   ) => Promise<void>;
   getWebViewAudioState: (webContentsId: number) => Promise<AudioState | null>;
-  onDiscordRPCUpdate: (richPresenceOrUrl: Record<string, any> | string) => void;
+  onDiscordRPCUpdate: (richPresenceOrUrl: RichPresencePayload) => void;
   onDiscordRPCDestroy: (hostname?: string) => void;
   openExternal: (url: string) => Promise<void>;
 }

@@ -1,5 +1,6 @@
 import path from "node:path";
-import { app } from "electron";
+import { appSettingsStore, storeKey } from "@electron/store";
+import { app, screen } from "electron";
 
 const isEnvSet = "ELECTRON_IS_DEV" in process.env;
 const getFromEnv = Number.parseInt(process.env.ELECTRON_IS_DEV!, 10) === 1;
@@ -42,3 +43,33 @@ export const isPromise = (value: any) =>
   (isObject(value) &&
     typeof value.then === "function" &&
     typeof value.catch === "function");
+
+export const deepClone = <T>(obj: T): T =>
+  obj == null ? obj : JSON.parse(JSON.stringify(obj));
+
+export const sortKeys = (value: any): any => {
+  if (Array.isArray(value)) return value.map(sortKeys);
+  if (value && typeof value === "object") {
+    const out: Record<string, any> = {};
+    for (const k of Object.keys(value).sort())
+      out[k] = sortKeys((value as any)[k]);
+    return out;
+  }
+  return value;
+};
+
+export const getUsedDisplay = () => {
+  const displays = screen.getAllDisplays();
+  const lastDisplayId = appSettingsStore.get(
+    storeKey.appSettings,
+  ).lastDisplayId;
+  let usedDisplay: Electron.Display;
+  if (lastDisplayId) {
+    usedDisplay =
+      displays.find((d) => d.id === lastDisplayId) ||
+      screen.getPrimaryDisplay();
+  } else {
+    usedDisplay = screen.getPrimaryDisplay();
+  }
+  return usedDisplay;
+};

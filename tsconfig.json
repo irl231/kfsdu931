@@ -29,5 +29,5 @@
       "@assets/*": ["./assets/*"]
     }
   },
-  "include": ["src", "electron", "scripts", "rsbuild.config.ts"]
+  "include": ["src", "electron", "scripts", "rsbuild.config.ts", "*test.ts"]
 }

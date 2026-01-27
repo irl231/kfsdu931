@@ -92,10 +92,6 @@ const api: ElectronAPI = {
       _event: IpcRendererEvent,
       senderUrl: string,
     ) => {
-      console.log(
-        "[Preload] onWebViewCloseExternal received senderUrl:",
-        senderUrl,
-      );
       cb(senderUrl);
     };
     ipcRenderer.on(channel.webview.closeExternal, closeExternalHandler);
@@ -145,12 +141,12 @@ const api: ElectronAPI = {
     ipcRenderer.invoke(channel.webview.setAudioMuted, webContentsId, muted),
   getWebViewAudioState: (webContentsId: number) =>
     ipcRenderer.invoke(channel.webview.getAudioState, webContentsId),
-  onDiscordRPCUpdate: (richPresenceOrUrl: Record<string, any> | string) => {
-    if (typeof richPresenceOrUrl === "string") {
-      return ipcRenderer.send(channel.discordRPC.update, richPresenceOrUrl);
-    }
-    // Clone object to avoid mutations
-    const presence = { ...richPresenceOrUrl, url: window.location.href };
+  onDiscordRPCUpdate: (richPresenceOrUrl: RichPresencePayload) => {
+    const url = window.location.href;
+    const presence = {
+      ...richPresenceOrUrl,
+      ...(!url.includes("localhost") ? { url } : {}),
+    };
     ipcRenderer.send(channel.discordRPC.update, presence);
   },
   onDiscordRPCDestroy: (url?: string) => {

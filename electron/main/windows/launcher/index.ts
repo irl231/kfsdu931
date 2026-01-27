@@ -1,9 +1,14 @@
 import path from "node:path";
 import { channel } from "@electron/ipc/channel";
 import { getQuitting } from "@electron/main/lifecycle";
-import { DIST_PATH, getMacIconPath, IS_DEV } from "@electron/main/utils";
+import {
+  DIST_PATH,
+  getMacIconPath,
+  getUsedDisplay,
+  IS_DEV,
+} from "@electron/main/utils";
 import { appSettingsStore, storeKey } from "@electron/store";
-import { app, BrowserWindow, screen, type Tray } from "electron";
+import { app, BrowserWindow, type Tray } from "electron";
 import { applyDock } from "../dock";
 import { handleWebRequestInterceptors } from "./intercept";
 import { createTray } from "./tray";
@@ -22,13 +27,13 @@ const winSize = {
 winSize.height += 63;
 
 export function createLauncherWindow(opened?: () => void) {
-  const { workArea: primaryDisplay } = screen.getPrimaryDisplay();
+  const { workArea: primaryDisplay } = getUsedDisplay();
   const biggest = Math.max(primaryDisplay.width, primaryDisplay.height) * 0.75;
   const size = {
     width: ~~biggest,
     height: ~~((biggest / 16) * 10),
   };
-  console.log("Creating launcher window with size:", size);
+
   win ??= new BrowserWindow({
     icon: getMacIconPath(),
     backgroundColor: "#141517",
