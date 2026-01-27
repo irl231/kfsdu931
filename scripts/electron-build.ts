@@ -278,9 +278,11 @@ export function buildElectron(electronOutDir: string): OnAfterBuild {
 
           pkg: {
             identity: null,
-            allowAnywhere: true,
+            allowAnywhere: false,
             allowCurrentUserHome: true,
-            allowRootDirectory: false,
+            allowRootDirectory: true,
+            isRelocatable: false,
+            overwriteAction: "upgrade",
             installLocation: "/Applications",
             scripts: "scripts/mac/pkg-scripts",
             license: "../LICENSE",
