@@ -14,7 +14,6 @@ import {
   getAppDir,
   getResourcesPath,
 } from "./electron-helper";
-import { obfuscateFile } from "./obfuscate";
 
 const author = (pkg as any).author?.name ?? (pkg as any).author;
 const appId = `com.${author.replace(/\s+/g, "-")}.${pkg.name}`.toLowerCase();
@@ -59,25 +58,6 @@ async function cleanupPackage({ appOutDir, packager }: AfterPackContext) {
         2,
       ),
     );
-  }
-}
-
-async function _obfuscateWeb({ appOutDir, packager }: AfterPackContext) {
-  const appDir = getAppDir(
-    appOutDir,
-    packager.appInfo.productFilename,
-    packager.platform.nodeName,
-  );
-  const staticDir = path.join(appDir, "dist", "web", "static");
-
-  log.info(`Obfuscating web JS files...`);
-  for await (const entry of fs.glob("**/*.js", {
-    exclude: ["{runtime,lib}-*.js"],
-    cwd: path.join(staticDir, "js"),
-  })) {
-    const filePath = path.join(staticDir, "js", entry);
-    log.info(` Obfuscating: ${path.relative(process.cwd(), filePath)}`);
-    obfuscateFile(filePath, filePath);
   }
 }
 
