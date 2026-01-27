@@ -45,6 +45,7 @@ jobs:
         id: version
         run: |
           DATE=$(date '+%Y%m%d')
+          SHORT_SHA=$(git rev-parse --short HEAD)
           NEXT_VERSION=0.0.0-nightly-${SHORT_SHA}-${DATE}
           echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
 
