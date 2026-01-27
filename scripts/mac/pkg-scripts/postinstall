@@ -1,20 +1,26 @@
 #!/bin/bash
-# Game Launcher PKG Post-installation Script
+# Aqverse PKG Post-installation Script
 
 set -e
 
-# Ensure this matches the actual executable name (e.g. "GameLauncher" vs "Game Launcher")
+# Ensure this matches the actual executable name (e.g. "Aqverse" vs "Aqverse")
 # If your executable has spaces, keep them here.
-PRODUCT_NAME="Game Launcher"
+PRODUCT_NAME="Aqverse"
 INSTALL_PATH="/Applications"
 APP_PATH="$INSTALL_PATH/$PRODUCT_NAME.app"
-LOG_FILE="/tmp/GameLauncher-postinstall.log"
+LOG_FILE="/tmp/Aqverse-postinstall.log"
+exec > "$LOG_FILE" 2>&1
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [POSTINSTALL] $1" | tee -a "$LOG_FILE"
 }
 
-log "Starting Game Launcher post-installation..."
+if [ "$EUID" -ne 0 ]; then
+    log "Error: Please run as root"
+    exit 1
+fi
+
+log "Starting Aqverse post-installation..."
 
 # Verify installation
 if [[ ! -d "$APP_PATH" ]]; then
@@ -40,7 +46,7 @@ EXECUTABLES=(
 log "Applying executable permissions..."
 for REL_PATH in "${EXECUTABLES[@]}"; do
     FILE_PATH="$APP_PATH/$REL_PATH"
-    
+
     if [ -f "$FILE_PATH" ]; then
         chmod 755 "$FILE_PATH"
     else

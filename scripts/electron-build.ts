@@ -167,6 +167,20 @@ export function buildElectron(electronOutDir: string): OnAfterBuild {
     async handler() {
       log.info("Building electron app...");
 
+      if (process.platform === "darwin") {
+        await Promise.all(
+          ["preinstall", "postinstall"].map(async (script) => {
+            const scriptPath = path.resolve(
+              __dirname,
+              `../scripts/mac/pkg-scripts/${script}`,
+            );
+            if (existsSync(scriptPath)) {
+              await fs.chmod(scriptPath, 0o755);
+            }
+          }),
+        );
+      }
+
       await electronBuild({
         config: {
           appId,
@@ -279,7 +293,7 @@ export function buildElectron(electronOutDir: string): OnAfterBuild {
           pkg: {
             identity: null,
             allowAnywhere: false,
-            allowCurrentUserHome: true,
+            allowCurrentUserHome: false,
             allowRootDirectory: true,
             isRelocatable: false,
             overwriteAction: "upgrade",
