@@ -7,6 +7,11 @@ settings:
 overrides:
   undici: ^5.29.0
 
+patchedDependencies:
+  builder-util@26.3.4:
+    hash: 914d6fd2db3a1fb459c36ca5ec5e01bad16a97a2615c46772864b4cba9ce89d5
+    path: patches/builder-util@26.3.4.patch
+
 importers:
 
   .:
@@ -4775,7 +4780,7 @@ snapshots:
       '@malept/flatpak-bundler': 0.4.0
       '@types/fs-extra': 9.0.13
       async-exit-hook: 2.0.1
-      builder-util: 26.3.4
+      builder-util: 26.3.4(patch_hash=914d6fd2db3a1fb459c36ca5ec5e01bad16a97a2615c46772864b4cba9ce89d5)
       builder-util-runtime: 9.5.1
       chromium-pickle-js: 0.2.0
       ci-info: 4.3.1
@@ -4938,7 +4943,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  builder-util@26.3.4:
+  builder-util@26.3.4(patch_hash=914d6fd2db3a1fb459c36ca5ec5e01bad16a97a2615c46772864b4cba9ce89d5):
     dependencies:
       7zip-bin: 5.2.0
       '@types/debug': 4.1.12
@@ -5230,7 +5235,7 @@ snapshots:
   dmg-builder@26.4.0(electron-builder-squirrel-windows@26.4.0):
     dependencies:
       app-builder-lib: 26.4.0(dmg-builder@26.4.0)(electron-builder-squirrel-windows@26.4.0)
-      builder-util: 26.3.4
+      builder-util: 26.3.4(patch_hash=914d6fd2db3a1fb459c36ca5ec5e01bad16a97a2615c46772864b4cba9ce89d5)
       fs-extra: 10.1.0
       iconv-lite: 0.6.3
       js-yaml: 4.1.1
@@ -5281,7 +5286,7 @@ snapshots:
   electron-builder-squirrel-windows@26.4.0(dmg-builder@26.4.0):
     dependencies:
       app-builder-lib: 26.4.0(dmg-builder@26.4.0)(electron-builder-squirrel-windows@26.4.0)
-      builder-util: 26.3.4
+      builder-util: 26.3.4(patch_hash=914d6fd2db3a1fb459c36ca5ec5e01bad16a97a2615c46772864b4cba9ce89d5)
       electron-winstaller: 5.4.0
     transitivePeerDependencies:
       - dmg-builder
@@ -5290,7 +5295,7 @@ snapshots:
   electron-builder@26.4.0(electron-builder-squirrel-windows@26.4.0):
     dependencies:
       app-builder-lib: 26.4.0(dmg-builder@26.4.0)(electron-builder-squirrel-windows@26.4.0)
-      builder-util: 26.3.4
+      builder-util: 26.3.4(patch_hash=914d6fd2db3a1fb459c36ca5ec5e01bad16a97a2615c46772864b4cba9ce89d5)
       builder-util-runtime: 9.5.1
       chalk: 4.1.2
       ci-info: 4.3.1
@@ -5308,7 +5313,7 @@ snapshots:
   electron-publish@26.3.4:
     dependencies:
       '@types/fs-extra': 9.0.13
-      builder-util: 26.3.4
+      builder-util: 26.3.4(patch_hash=914d6fd2db3a1fb459c36ca5ec5e01bad16a97a2615c46772864b4cba9ce89d5)
       builder-util-runtime: 9.5.1
       chalk: 4.1.2
       form-data: 4.0.5

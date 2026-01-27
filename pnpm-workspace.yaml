@@ -12,6 +12,7 @@ onlyBuiltDependencies:
   - electron-winstaller
   - esbuild
   - sharp
+  - win-screen-resolution
 
 preferWorkspacePackages: true
 

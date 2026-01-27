@@ -1,0 +1,43 @@
+diff --git a/out/log.js b/out/log.js
+index da19415baf520ba0347f2ac3a4ece1228540a5bf..739f57dbba999f1bb0a87e9fd550d43b6a9303ab 100644
+--- a/out/log.js
++++ b/out/log.js
+@@ -29,17 +29,33 @@ class Logger {
+         return exports.debug.enabled;
+     }
+     info(messageOrFields, message) {
+-        this.doLog(message, messageOrFields, "info");
++        try {
++            this.doLog(message, messageOrFields, "info");
++        } catch (e) {
++            // ignore
++        }
+     }
+     error(messageOrFields, message) {
+-        this.doLog(message, messageOrFields, "error");
++        try {
++            this.doLog(message, messageOrFields, "error");
++        } catch (e) {
++            // ignore
++        }
+     }
+     warn(messageOrFields, message) {
+-        this.doLog(message, messageOrFields, "warn");
++        try {
++            this.doLog(message, messageOrFields, "warn");
++        } catch (e) {
++            // ignore
++        }
+     }
+     debug(fields, message) {
+-        if (exports.debug.enabled) {
+-            this._doLog(message, fields, "debug");
++        try {
++            if (exports.debug.enabled) {
++                this._doLog(message, fields, "debug");
++            }
++        } catch (e) {
++            // ignore
+         }
+     }
+     doLog(message, messageOrFields, level) {
