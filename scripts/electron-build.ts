@@ -298,7 +298,9 @@ export function buildElectron(electronOutDir: string): OnAfterBuild {
               zipResources(ctx),
             ]).then(() => {}),
         },
-      }).catch(log.error);
+      }).catch((err) => {
+        log.error(err);
+      });
     },
   };
 }
