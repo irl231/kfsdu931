@@ -35,17 +35,29 @@ function parseUrl(
   }
 }
 
+// Cache for game domain lookups to avoid repeated URL parsing
+const gameDomainCache = new Map<string, ReturnType<typeof GAMES.find>>();
+
 function findGame(domain: string, pathname?: string) {
   if (pathname) {
     const id = `${domain}-${pathname}`;
     return GAMES.find((game) => game.id === id);
   }
 
-  return GAMES.find((game) => {
+  // Check cache first
+  if (gameDomainCache.has(domain)) {
+    return gameDomainCache.get(domain);
+  }
+
+  const game = GAMES.find((game) => {
     const url = new URL(game.url.game.replace(/\/$/, ""));
     const tld = parseTLD(url.hostname);
     return tld.domain === domain;
   });
+
+  // Cache the result (including undefined)
+  gameDomainCache.set(domain, game);
+  return game;
 }
 
 const isEnabled = (): boolean =>
@@ -102,7 +114,16 @@ export async function updateActivity(
     return;
   }
 
-  console.log("[Discord RPC] Payload:", payload, "\n");
+  // Check active tab URL early to skip unnecessary work
+  const activeTabURL = appSettingsStore
+    .get(storeKey.appSettings)
+    .activeTabURL?.replace(/\/$/, "");
+  if (!activeTabURL || activeTabURL !== presenceUrl) {
+    log.debug(
+      "[Discord RPC] Active tab URL does not match presence URL, skipping update.",
+    );
+    return;
+  }
 
   activitiesTimestamps[clientId] =
     activitiesTimestamps[clientId] || startTimestamp || Date.now();
@@ -122,20 +143,20 @@ export async function updateActivity(
     },
     ...(partyId && partySize && partyMax
       ? {
-          party: {
-            id: partyId,
-            size: [partySize, partyMax],
-          },
-        }
+        party: {
+          id: partyId,
+          size: [partySize, partyMax],
+        },
+      }
       : {}),
     buttons: [
       ...(game?.url.game
         ? [
-            {
-              label: "Play Now",
-              url: game?.url.game,
-            },
-          ]
+          {
+            label: "Play Now",
+            url: game?.url.game,
+          },
+        ]
         : []),
       ...(buttons || []),
     ],
@@ -153,18 +174,7 @@ export async function updateActivity(
     });
   }
 
-  log.debug("[Discord RPC] Setting activity:", activity);
-
-  const activeTabURL = appSettingsStore
-    .get(storeKey.appSettings)
-    .activeTabURL?.replace(/\/$/, "");
-  if (activeTabURL && activeTabURL === presenceUrl) {
-    await rpc.updateActivity(clientId, activity);
-  } else {
-    log.debug(
-      "[Discord RPC] Active tab URL does not match presence URL, skipping update.",
-    );
-  }
+  await rpc.updateActivity(clientId, activity);
 
   return activity;
 }

@@ -121,6 +121,7 @@ class RPCManager {
       if (!this.clientId) return;
       return this.connect(this.clientId, true);
     }
+
     this.clientId = clientIdOrReconnect;
     this.client = new Client();
     this.client.on(Event.ERROR, (error) => {
@@ -135,6 +136,7 @@ class RPCManager {
       socket.on("close", () => {
         if (!isShuttingDown) {
           send.warn(`Socket closed, reconnecting...`);
+          this.reconnectAttempts = 0;
           this.scheduleConnect(clientIdOrReconnect);
         }
       });
@@ -165,11 +167,20 @@ class RPCManager {
     this.client = null;
     this.readyResp = null;
     this.lastActivity = null;
-    this.activityPayloads.clear();
+    if (this.clientId) {
+      this.activityPayloads.delete(this.clientId);
+    } else {
+      this.activityPayloads.clear();
+    }
   }
 
   async updateActivity(clientId: string, activity: ActivityPayload) {
     if (isShuttingDown) return;
+
+    if (typeof this.clientId === "string" && typeof clientId === "string" && this.clientId !== clientId) {
+      send.info(`Client ID changed, reconnecting...`);
+      await this.destroy();
+    }
 
     if (this.client === null || this.readyResp === null) {
       await this.scheduleConnect(clientId);
@@ -196,6 +207,7 @@ class RPCManager {
       this.lastActivity = activity;
       this.activityPayloads.set(clientId, activity);
       await this.client?.setActivity(activity);
+      send.info(`Activity set: ${JSON.stringify(activity)}`);
     } catch (error) {
       send.error(error as Error);
     }
