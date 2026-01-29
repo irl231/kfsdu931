@@ -1,0 +1,187 @@
+import { spawn } from "node:child_process";
+import { accessSync } from "node:fs";
+import { createConnection, type Socket } from "node:net";
+import { homedir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import type { ActivityPayload } from "discord-rpc-new";
+import { RPC_PORT } from "./constants";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const BINARY_NAME = `discord-rpc-bun${process.platform === "win32" ? ".exe" : ""}`;
+const pkgDir = resolve(__dirname, "..");
+const distDir = join(pkgDir, "dist");
+
+const getBunBinPath = () => {
+  return join(
+    homedir(),
+    ".bun",
+    "bin",
+    `bun${process.platform === "win32" ? ".exe" : ""}`,
+  );
+};
+
+export type { ActivityPayload } from "discord-rpc-new";
+
+export class DiscordRPC {
+  private socket: Socket | null = null;
+  private isRPCReady = false;
+  clientId: string | null = null;
+
+  private async connect() {
+    let hasBinary = false;
+    try {
+      // if dist file, check if binary exist
+      if (__filename.endsWith("dist/index.js")) {
+        accessSync(join(distDir, BINARY_NAME));
+        hasBinary = true;
+      }
+    } catch {}
+
+    if (!hasBinary && process.env.BUN_INSTALL) {
+      await new Promise((resolve) =>
+        spawn(getBunBinPath(), ["x", "rimraf", join(distDir, BINARY_NAME)], {
+          cwd: pkgDir,
+          shell: true,
+          stdio: "ignore",
+          windowsHide: true,
+        }).once("close", resolve),
+      );
+
+      await new Promise((resolve) =>
+        spawn(getBunBinPath(), ["run", "build:bin"], {
+          cwd: pkgDir,
+          shell: true,
+          stdio: "ignore",
+          windowsHide: true,
+        }).once("close", resolve),
+      );
+    }
+
+    if (!this.isRPCReady) {
+      const child = spawn(`./${BINARY_NAME}`, {
+        cwd: distDir,
+        stdio: [null, "pipe", "pipe"],
+        windowsHide: true,
+      });
+
+      child.stdout.on("data", this.onData.bind(this));
+      child.once("close", () => {
+        this.isRPCReady = false;
+      });
+
+      return new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (this.isRPCReady) {
+            clearInterval(interval);
+            this.connectSocket();
+            resolve();
+          }
+        }, 100);
+      });
+    }
+  }
+
+  private onData(data: Buffer) {
+    let json: Record<string, unknown>;
+    try {
+      json = JSON.parse(data.toString().trim());
+    } catch {
+      return;
+    }
+
+    switch (json.action) {
+      case "ready":
+        this.isRPCReady = true;
+        break;
+      case "error":
+        console.error("[Discord RPC] Error:", json.error);
+        break;
+      case "warn":
+        console.warn("[Discord RPC] Warning:", json.message);
+        break;
+      case "info":
+        console.log("[Discord RPC] Info:", json.message);
+        break;
+      case "close":
+        this.isRPCReady = false;
+        break;
+      case "destroyed":
+        console.error(`[Discord RPC] Destroyed client ${json.clientId}`);
+        break;
+    }
+  }
+
+  private async connectSocket() {
+    this.socket = await createConnection({
+      port: RPC_PORT,
+    });
+
+    this.socket.on("connect", () => console.log("Connected to Discord RPC"));
+    this.socket.on("data", (data) => console.log(data.toString()));
+    this.socket.on("close", () => this.socket?.connect({ port: RPC_PORT }));
+  }
+
+  updateActivity(): Promise<void>;
+  updateActivity(clearActivity: true): Promise<void>;
+  updateActivity(clientId: null, disconnectClient: true): Promise<void>;
+  updateActivity(clientId: string, clearActivity: true): Promise<void>;
+  updateActivity(
+    clientId: string,
+    clearActivity: true,
+    disconnectClient: true,
+  ): Promise<void>;
+  updateActivity(clientId: string, payload: ActivityPayload): Promise<void>;
+  async updateActivity(
+    clientIdOrClearActivity?: string | true | null,
+    payloadOrClearOrDisconnectActivity?: ActivityPayload | true,
+    disconnectClient?: true,
+  ) {
+    if (!this.isRPCReady) await this.connect();
+    const isClearAction =
+      (typeof clientIdOrClearActivity === "boolean" &&
+        clientIdOrClearActivity === true) ||
+      (typeof payloadOrClearOrDisconnectActivity === "boolean" &&
+        payloadOrClearOrDisconnectActivity === true);
+    const isUpdateAction =
+      typeof clientIdOrClearActivity === "string" &&
+      typeof payloadOrClearOrDisconnectActivity === "object";
+    const isDisconnectAction =
+      (isClearAction &&
+        typeof disconnectClient === "boolean" &&
+        disconnectClient === true) ||
+      (clientIdOrClearActivity === null &&
+        typeof payloadOrClearOrDisconnectActivity === "boolean" &&
+        payloadOrClearOrDisconnectActivity === true);
+    const isReconnect =
+      !isClearAction && !isUpdateAction && !isDisconnectAction;
+    const action = isClearAction
+      ? "clear"
+      : isUpdateAction
+        ? "update"
+        : isDisconnectAction
+          ? "disconnect"
+          : isReconnect
+            ? "reconnect"
+            : "unknown";
+    const clientId =
+      typeof clientIdOrClearActivity === "string"
+        ? clientIdOrClearActivity
+        : undefined;
+    const payload =
+      typeof payloadOrClearOrDisconnectActivity === "object"
+        ? payloadOrClearOrDisconnectActivity
+        : undefined;
+    if (clientId) this.clientId = clientId;
+
+    this.socket?.write(
+      JSON.stringify({
+        action,
+        ...(this.clientId ? { clientId: this.clientId } : {}),
+        ...(payload ? { payload } : {}),
+      }),
+    );
+  }
+}

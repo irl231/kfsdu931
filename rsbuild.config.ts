@@ -27,6 +27,16 @@ const videoNodePath = path.posix.join(
   "video.node",
 );
 
+const discordRpcBinaryName = `discord-rpc-bun${process.platform === "win32" ? ".exe" : ""}`;
+const discordRpcPath = path.posix.join(
+  path
+    .resolve(path.dirname(require.resolve("@lazuee/discord-rpc")), "..")
+    .replace(/\\/g, "/"),
+  "dist",
+  discordRpcBinaryName,
+);
+console.log(discordRpcPath);
+
 export default defineConfig(({ env }) => {
   const isProdBuild = env === "production";
   const mainConfig = createEnvConfig(
@@ -72,6 +82,11 @@ export default defineConfig(({ env }) => {
                   },
                 ]
               : []),
+
+            {
+              from: discordRpcPath,
+              to: path.resolve(process.cwd(), ELECTRON_OUT_DIR),
+            },
           ],
         }),
       ]);
@@ -93,6 +108,11 @@ export default defineConfig(({ env }) => {
       code = code.replace(
         /dlopen\(['"]video\.node['"]\s*,\s*\{\s*cwd:\s*join\(import\.meta\.dirname, ['"]..\/['"]\)/,
         `dlopen('${isProdBuild ? "win-screen-resolution.node" : "video.node"}', { cwd: ${isProdBuild ? "import.meta.dirname" : `join(import.meta.dirname, '${path.relative(ELECTRON_OUT_DIR, path.resolve(path.dirname(videoNodePath), "..", "..")).replace(/\\/g, "/")}')`}`,
+      );
+      // fix discord-rpc > distDir path for discord-rpc-bun binary
+      code = code.replace(
+        /distDir\s*=\s*join\(pkgDir, ['"]dist['"]\)/,
+        `distDir = ${isProdBuild ? "import.meta.dirname" : `join(import.meta.dirname, "..", "..", '${path.relative(ELECTRON_OUT_DIR, path.dirname(discordRpcPath)).replace(/\\/g, "/")}')`};console.log(\`distDir: \${distDir}\`)`,
       );
 
       return code;
@@ -132,9 +152,6 @@ export default defineConfig(({ env }) => {
           pluginBabel({
             include: /\.[jt]sx$/,
             babelLoaderOptions: (opts) => {
-              opts.comments = false;
-              opts.compact = false;
-
               opts.plugins ??= [];
               opts.plugins.unshift([
                 "babel-plugin-react-compiler",

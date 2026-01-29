@@ -26,13 +26,20 @@ interface RichPresencePayload {
   details?: string;
   state?: string;
   startTimestamp?: number;
-  assets?: {
-    largeImageKey?: string;
-    largeImageText?: string;
-    smallImageKey?: string;
-    smallImageText?: string;
-  };
-  buttons?: Array<{ label: string; url: string }>;
+  largeImageKey?: string;
+  largeImageText?: string;
+  smallImageKey?: string;
+  smallImageText?: string;
+  partyId?: string;
+  partySize?: number;
+  partyMax?: number;
+  joinSecret?: string;
+  spectateSecret?: string;
+  // doesn't exist on loader swf
+  buttons?: {
+    label: string;
+    url: string;
+  }[];
 }
 
 interface ElectronAPI {

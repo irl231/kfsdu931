@@ -3,14 +3,14 @@ import {
   discordActivityStore,
   storeKey,
 } from "@electron/store";
+import { type ActivityPayload, DiscordRPC } from "@lazuee/discord-rpc";
 import { GAMES } from "@web/pages/launcher/constants";
 import { ipcMain } from "electron";
 import log from "electron-log";
 import { parse as parseTLD } from "tldts";
-import { channel } from "../channel";
-import { DiscordRPC, type PresenceData } from "./rpc";
+import { channel } from "./channel";
 
-const rpc = new DiscordRPC();
+export const rpc = new DiscordRPC();
 const rpcId = "1465287640944345109";
 const activitiesTimestamps: Record<string, number> = {};
 
@@ -48,15 +48,19 @@ function findGame(domain: string, pathname?: string) {
   });
 }
 
-function isEnabled(): boolean {
-  return appSettingsStore.get(storeKey.appSettings).discordPresence ?? false;
-}
+const isEnabled = (): boolean =>
+  appSettingsStore.get(storeKey.appSettings).discordPresence ?? false;
+const isObjectValueEmpty = (obj?: object): boolean =>
+  !obj ||
+  Object.values(obj).every(
+    (value) => value === null || value === undefined || value === "",
+  );
 
-export async function updatePresence(
+export async function updateActivity(
   payload: RichPresencePayload,
-): Promise<PresenceData | undefined> {
+): Promise<ActivityPayload | undefined> {
   if (!isEnabled()) {
-    await rpc.clearActivity();
+    await rpc.updateActivity(true);
     return;
   }
 
@@ -67,7 +71,13 @@ export async function updatePresence(
     details,
     state,
     startTimestamp,
-    assets,
+    largeImageKey,
+    largeImageText,
+    smallImageKey,
+    smallImageText,
+    partyId,
+    partySize,
+    partyMax,
     buttons,
   } = payload;
 
@@ -92,46 +102,48 @@ export async function updatePresence(
     return;
   }
 
+  console.log("[Discord RPC] Payload:", payload, "\n");
+
   activitiesTimestamps[clientId] =
     activitiesTimestamps[clientId] || startTimestamp || Date.now();
 
   // Build presence data first (before connection attempt)
-  const presence: PresenceData = {
-    applicationId: clientId,
+  const activity: ActivityPayload = {
     details,
     state: formatState(state),
-    startTimestamp: activitiesTimestamps[clientId],
-    largeImageKey: assets?.largeImageKey,
-    largeImageText: assets?.largeImageText,
-    smallImageKey: assets?.smallImageKey,
-    smallImageText: assets?.smallImageText,
-    buttons,
+    timestamps: {
+      start: activitiesTimestamps[clientId],
+    },
+    assets: {
+      large_image: largeImageKey,
+      large_text: largeImageText,
+      small_image: smallImageKey,
+      small_text: smallImageText,
+    },
+    ...(partyId && partySize && partyMax
+      ? {
+          party: {
+            id: partyId,
+            size: [partySize, partyMax],
+          },
+        }
+      : {}),
+    buttons: [
+      ...(game?.url.game
+        ? [
+            {
+              label: "Play Now",
+              url: game?.url.game,
+            },
+          ]
+        : []),
+      ...(buttons || []),
+    ],
   };
 
-  if (rpc.compareActivities(presence)) {
-    log.debug(
-      "[Discord RPC] Presence unchanged, skipping update for payload:",
-      presence,
-    );
-    return presence;
-  }
-
-  // Store presence for reconnection (even if connection fails)
-  // This ensures presence is restored when Discord becomes available
-  rpc.storePresence(presence);
-
-  // Connect if needed (handles switching between different apps)
-  if (rpc.currentClientId !== clientId) {
-    if (rpc.connected) {
-      log.debug(
-        "[DiscordRPC] Disconnecting from previous client ID:",
-        rpc.currentClientId,
-      );
-      await rpc.disconnect();
-    }
-    log.debug(`[DiscordRPC] Connecting with client ID: ${clientId}`);
-    await rpc.connect(clientId);
-  }
+  if (isObjectValueEmpty(activity.assets)) delete activity.assets;
+  if (isObjectValueEmpty(activity.party)) delete activity.party;
+  if (isObjectValueEmpty(activity.buttons)) delete activity.buttons;
 
   if (game) {
     log.debug(`[Discord RPC] Activity associated with game: ${game.name}`);
@@ -141,21 +153,20 @@ export async function updatePresence(
     });
   }
 
-  log.debug("[Discord RPC] Setting activity:", presence);
+  log.debug("[Discord RPC] Setting activity:", activity);
 
   const activeTabURL = appSettingsStore
     .get(storeKey.appSettings)
     .activeTabURL?.replace(/\/$/, "");
   if (activeTabURL && activeTabURL === presenceUrl) {
-    await rpc.setActivity(presence);
+    await rpc.updateActivity(clientId, activity);
   } else {
-    rpc.storePresence();
     log.debug(
       "[Discord RPC] Active tab URL does not match presence URL, skipping update.",
     );
   }
 
-  return presence;
+  return activity;
 }
 
 function formatState(state?: string): string | undefined {
@@ -188,7 +199,7 @@ export function registerDiscordRPCHandlers(): void {
       // Debounce rapid updates
       if (updateTimer) clearTimeout(updateTimer);
       updateTimer = setTimeout(() => {
-        updatePresence(payload).catch((error) => {
+        updateActivity(payload).catch((error) => {
           log.error("[Discord RPC] Update error:", error);
         });
       }, DEBOUNCE_MS);
@@ -226,7 +237,7 @@ export function registerDiscordRPCHandlers(): void {
       }
     }
 
-    await rpc.clearActivity();
+    await rpc.updateActivity(true);
   });
 }
 
@@ -235,5 +246,6 @@ export async function cleanupDiscordRPC(): Promise<void> {
     clearTimeout(updateTimer);
     updateTimer = null;
   }
-  await rpc.disconnect();
+
+  await rpc.updateActivity(null, true);
 }

@@ -39,14 +39,33 @@ export const killElectron = (_isRestarting: boolean = true) => {
   }
 };
 
+const getRemoteDebuggingPort = () => {
+  const args = process.argv.slice(2);
+  const port =
+    args
+      .find((arg) => arg.toLowerCase().startsWith("remote-debugging-port="))
+      ?.split("=")?.[1] ??
+    args[args.findIndex((arg) => arg.startsWith("remote-debugging-port")) + 1];
+
+  if (port && /^[0-9]+$/.test(port)) return parseInt(port, 10);
+  return null;
+};
+
 const spawnElectron = (): Promise<void> => {
-  electronProcess = childProcess.spawn(electron as unknown as string, ["."], {
-    stdio: "pipe",
+  const remoteDebuggingPort = getRemoteDebuggingPort();
+  const args = [
+    ".",
+    ...(remoteDebuggingPort
+      ? [`--remote-debugging-port=${remoteDebuggingPort}`]
+      : []),
+  ];
+  electronProcess = childProcess.spawn(electron as unknown as string, args, {
+    stdio: [null, "pipe", "pipe"],
     windowsHide: false,
   });
 
   return new Promise<void>((resolve) => {
-    electronProcess?.stdout?.on("data", (data: Buffer) => {
+    electronProcess?.stdout.on("data", (data: Buffer) => {
       const output = data.toString();
       const isIgnored = ignored.some((msg) => output.includes(msg));
       if (!isIgnored) {
@@ -54,7 +73,7 @@ const spawnElectron = (): Promise<void> => {
       }
     });
 
-    electronProcess?.stderr?.on("data", (data: Buffer) => {
+    electronProcess?.stderr.on("data", (data: Buffer) => {
       const output = data.toString();
       const isIgnored = ignored.some((msg) => output.includes(msg));
       if (!isIgnored) {

@@ -113,7 +113,7 @@ const getNodeCompatRules = (): Rspack.RuleSetRule[] => [
 const createSwcOptions = (syntax: "typescript" | "ecmascript", tsx = false) =>
   ({
     jsc: {
-      target: "es2019" as const,
+      target: "es2019",
       parser: { syntax, ...(tsx && { tsx: true }) },
       transform: {
         useDefineForClassFields: false,
@@ -126,7 +126,7 @@ const createSwcOptions = (syntax: "typescript" | "ecmascript", tsx = false) =>
         }),
       },
     },
-  }) as const;
+  }) satisfies Rspack.SwcLoaderOptions;
 
 interface NodeEnvConfig {
   entry: `./${string}.${"ts" | "mts" | "cts" | "js" | "mjs" | "cjs"}`;
@@ -334,8 +334,6 @@ const electronPlugin = (electronOutDir: string): RsbuildPlugin => ({
         port: 3020,
         host: "localhost",
         printUrls: false,
-        open: false,
-        historyApiFallback: true,
       },
     }));
 
@@ -370,7 +368,14 @@ const electronPlugin = (electronOutDir: string): RsbuildPlugin => ({
           }
 
           if (environment.name === "main" || environment.name === "preload") {
-            if (stats?.hasErrors()) return;
+            if (!stats) return;
+            if (stats.hasErrors()) return;
+
+            const modifiedFiles =
+              stats.compilation.compiler.modifiedFiles?.size ?? 0;
+            const removedFiles =
+              stats.compilation.compiler.removedFiles?.size ?? 0;
+            if (modifiedFiles === 0 && removedFiles === 0) return;
 
             restartElectron(
               stats?.compilation.startTime,

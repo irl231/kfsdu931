@@ -1,6 +1,7 @@
 import "../polyfills/event";
+import "../polyfills/crypto.mjs";
 import { registerIpcHandlers } from "@electron/ipc";
-import { cleanupDiscordRPC } from "@electron/ipc/discord-rpc";
+import { cleanupDiscordRPC, rpc } from "@electron/ipc/discord-rpc";
 import {
   appSettingsStore,
   discordActivityStore,
@@ -61,7 +62,6 @@ try {
   log.error("[Main] Error registering handlers:", error);
 }
 
-// Optimize app startup with proper async handling
 app.whenReady().then(async () => {
   discordActivityStore.clear();
 
@@ -160,6 +160,7 @@ app
 
       mainWin.focus();
       log.debug("[Main] Window restored via activate event");
+      if (rpc.clientId) rpc.updateActivity();
     }
   });
 

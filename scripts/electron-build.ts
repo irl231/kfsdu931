@@ -311,7 +311,6 @@ export function buildElectron(electronOutDir: string): OnAfterBuild {
             Promise.all([
               cleanupPackage(ctx),
               pruneMacFramework(ctx),
-              // obfuscateWeb(ctx),
               zipResources(ctx),
             ]).then(() => {}),
         },

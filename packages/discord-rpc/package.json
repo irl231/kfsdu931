@@ -1,0 +1,35 @@
+{
+  "name": "@lazuee/discord-rpc",
+  "version": "1.0.0",
+  "module": "src/index.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "private": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "preinstall": "bun run build",
+    "prepublish": "bun run build",
+    "build": "rm -rf dist && bun x tsc && bun run build:bin",
+    "build:bin": "bun build --compile --minify --bytecode --entrypoints src/discord-rpc/index.ts --outfile dist/discord-rpc-bun --target bun"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "discord-rpc-new": "github:lazuee/discord-rpc-new#main"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

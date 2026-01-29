@@ -106,16 +106,29 @@ export function useBrowserTabs() {
 
           if (game && !tab.url.startsWith(game.url.game || "")) {
             activityForTab = {
-              ...activityForTab,
               id: game.discordId,
               url: tab.url,
               details: "🧭 Browsing",
               state: `🌐 ${parsedUrl.hostname}${parsedUrl.pathname}`,
+              partyId: undefined,
+              partySize: undefined,
+              partyMax: undefined,
+              joinSecret: undefined,
+              spectateSecret: undefined,
+              buttons: [
+                {
+                  label: "Browse",
+                  url: tab.url,
+                },
+              ],
             };
           }
 
           if (activityForTab?.id) {
-            console.log(`[DiscordRPC] Updating presence for tab: ${tab.url}`);
+            console.log(
+              `[DiscordRPC] Updating presence for tab: ${tab.url}`,
+              activityForTab,
+            );
             window.electron.onDiscordRPCUpdate(activityForTab);
           } else {
             console.log(
