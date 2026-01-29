@@ -5,6 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  discord-rpc-new: github:lazuee/discord-rpc-new#main
   undici: ^5.29.0
 
 importers:

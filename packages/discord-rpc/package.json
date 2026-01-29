@@ -25,9 +25,12 @@
     "build": "rm -rf dist && bun x tsc && bun run build:bin",
     "build:bin": "bun build --compile --minify --bytecode --entrypoints src/discord-rpc/index.ts --outfile dist/discord-rpc-bun --target bun"
   },
+  "overrides": {
+    "discord-rpc-new": "github:lazuee/discord-rpc-new#main"
+  },
   "devDependencies": {
     "@types/bun": "latest",
-    "discord-rpc-new": "github:lazuee/discord-rpc-new#main"
+    "discord-rpc-new": "^1.2.0"
   },
   "peerDependencies": {
     "typescript": "^5"
