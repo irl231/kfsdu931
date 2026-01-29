@@ -69,7 +69,9 @@
       "electron-winstaller",
       "esbuild",
       "sharp",
-      "win-screen-resolution",
+      "win-screen-resolution"
+    ],
+    "ignoredBuiltDependencies": [
       "discord-rpc-new"
     ]
   }
