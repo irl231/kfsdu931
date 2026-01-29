@@ -68,7 +68,8 @@
       "electron-winstaller",
       "esbuild",
       "sharp",
-      "win-screen-resolution"
+      "win-screen-resolution",
+      "discord-rpc-new"
     ]
   }
 }
