@@ -27,7 +27,7 @@ jobs:
     name: Check latest commit
     runs-on: ubuntu-latest
     outputs:
-      should_run: ${{ steps.check_latest_commit.outputs.code_changes_since_yesterday || steps.version.outputs.nightly_version_exists }}
+      should_run: ${{ steps.check_latest_commit.outputs.code_changes_since_yesterday == 'true' && steps.version.outputs.nightly_version_exists != 'true' }}
       next_version: ${{ steps.version.outputs.next_version }}
     steps:
       - name: Checkout
@@ -45,7 +45,7 @@ jobs:
           fi
 
       - name: Check for changes
-        if: ${{ needs.check.outputs.should_run == 'true' || inputs.forceRun }}
+        if: ${{ steps.check_latest_commit.outputs.code_changes_since_yesterday == 'true' || inputs.forceRun }}
         id: version
         run: |
           DATE=$(date '+%Y%m%d')
@@ -62,7 +62,7 @@ jobs:
 
   # linux:
   #   name: Linux
-  #   if: ${{ needs.check.outputs.should_run == 'true' || inputs.forceRun }}
+  #   if: ${{ !cancelled() && needs.check.result == 'success' && (needs.check.outputs.should_run == 'true' || inputs.forceRun) }}
   #   needs: [check]
   #   uses: ./.github/workflows/linux.yml
   #   secrets: inherit
@@ -73,7 +73,7 @@ jobs:
 
   macos:
     name: MacOS
-    if: ${{ needs.check.outputs.should_run == 'true' || inputs.forceRun }}
+    if: ${{ !cancelled() && needs.check.result == 'success' && (needs.check.outputs.should_run == 'true' || inputs.forceRun) }}
     needs: [check]
     uses: ./.github/workflows/macos.yml
     secrets: inherit
@@ -84,7 +84,7 @@ jobs:
 
   windows:
     name: Windows
-    if: ${{ needs.check.outputs.should_run == 'true' || inputs.forceRun }}
+    if: ${{ !cancelled() && needs.check.result == 'success' && (needs.check.outputs.should_run == 'true' || inputs.forceRun) }}
     needs: [check]
     uses: ./.github/workflows/windows.yml
     secrets: inherit
@@ -95,7 +95,7 @@ jobs:
 
   nightly:
     name: Publish to GitHub
-    if: ${{ needs.check.outputs.should_run == 'true' || inputs.forceRun }}
+    if: ${{ !cancelled() && needs.check.result == 'success' && (needs.check.outputs.should_run == 'true' || inputs.forceRun) }}
     needs: [check, macos, windows]
     runs-on: ubuntu-latest
     steps:

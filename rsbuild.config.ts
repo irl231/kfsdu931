@@ -35,7 +35,6 @@ const discordRpcPath = path.posix.join(
   "dist",
   discordRpcBinaryName,
 );
-console.log(discordRpcPath);
 
 export default defineConfig(({ env }) => {
   const isProdBuild = env === "production";
@@ -112,7 +111,7 @@ export default defineConfig(({ env }) => {
       // fix discord-rpc > distDir path for discord-rpc-bun binary
       code = code.replace(
         /distDir\s*=\s*join\(pkgDir, ['"]dist['"]\)/,
-        `distDir = ${isProdBuild ? "import.meta.dirname" : `join(import.meta.dirname, "..", "..", '${path.relative(ELECTRON_OUT_DIR, path.dirname(discordRpcPath)).replace(/\\/g, "/")}')`};console.log(\`distDir: \${distDir}\`)`,
+        `distDir = ${isProdBuild ? "import.meta.dirname" : `join(import.meta.dirname, "..", "..", '${path.relative(ELECTRON_OUT_DIR, path.dirname(discordRpcPath)).replace(/\\/g, "/")}')`}`,
       );
 
       return code;
