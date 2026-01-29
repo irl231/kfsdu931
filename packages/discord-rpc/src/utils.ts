@@ -1,5 +1,5 @@
 export const deepClone = <T>(obj: T): T =>
-  obj == null ? obj : JSON.parse(JSON.stringify(obj));
+  obj == null ? obj : structuredClone(obj);
 
 export const sortKeys = (value: any): any => {
   if (Array.isArray(value)) return value.map(sortKeys);

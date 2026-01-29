@@ -28,6 +28,8 @@ export type { ActivityPayload } from "discord-rpc-new";
 export class DiscordRPC {
   private socket: Socket | null = null;
   private isRPCReady = false;
+  private socketReconnectAttempts = 0;
+  private readonly MAX_SOCKET_RECONNECTS = 5;
   clientId: string | null = null;
 
   private async connect() {
@@ -38,7 +40,7 @@ export class DiscordRPC {
         accessSync(join(distDir, BINARY_NAME));
         hasBinary = true;
       }
-    } catch {}
+    } catch { }
 
     if (!hasBinary && process.env.BUN_INSTALL) {
       await new Promise((resolve) =>
@@ -115,13 +117,35 @@ export class DiscordRPC {
   }
 
   private async connectSocket() {
-    this.socket = await createConnection({
-      port: RPC_PORT,
-    });
+    // Clean up existing socket if any
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.destroy();
+    }
 
-    this.socket.on("connect", () => console.log("Connected to Discord RPC"));
+    this.socket = createConnection({ port: RPC_PORT });
+
+    this.socket.on("connect", () => {
+      console.log("Connected to Discord RPC");
+      this.socketReconnectAttempts = 0; // Reset on successful connection
+    });
     this.socket.on("data", (data) => console.log(data.toString()));
-    this.socket.on("close", () => this.socket?.connect({ port: RPC_PORT }));
+    this.socket.on("close", () => {
+      if (this.socketReconnectAttempts < this.MAX_SOCKET_RECONNECTS) {
+        this.socketReconnectAttempts++;
+        setTimeout(() => {
+          if (this.socket && !this.socket.destroyed) {
+            this.socket.connect({ port: RPC_PORT });
+          }
+        }, 1000);
+      } else {
+        console.warn("[Discord RPC] Max socket reconnect attempts reached");
+      }
+    });
+    this.socket.on("error", (err) => {
+      // Prevent uncaught exception, error is already logged via close event
+      console.error("[Discord RPC] Socket error:", err.message);
+    });
   }
 
   updateActivity(): Promise<void>;

@@ -16,6 +16,9 @@ const RECONNECT_CONFIG = {
   maxAttempts: 10, // Max reconnect attempts before giving up
 } as const;
 
+// Graceful shutdown state
+let isShuttingDown = false;
+
 function normalizeActivityForCompare(activity: ActivityPayload) {
   const copy = deepClone(activity) || {};
   if (copy.timestamps?.start) copy.timestamps.start = 0;
@@ -53,16 +56,21 @@ class RPCManager {
   }
 
   private async scheduleConnect(clientId: string): Promise<void> {
+    if (isShuttingDown) return;
     if (this.reconnectInterval) clearTimeout(this.reconnectInterval);
     this.reconnectAttempts++;
     const delay = Math.min(
       RECONNECT_CONFIG.initialDelay *
-        RECONNECT_CONFIG.multiplier ** (this.reconnectAttempts - 1),
+      RECONNECT_CONFIG.multiplier ** (this.reconnectAttempts - 1),
       RECONNECT_CONFIG.maxDelay,
     );
 
     return new Promise((resolve, reject) => {
       this.reconnectInterval = setTimeout(() => {
+        if (isShuttingDown) {
+          resolve();
+          return;
+        }
         if (this.reconnectAttempts >= RECONNECT_CONFIG.maxAttempts) {
           this.reconnectAttempts = 0;
           this.client = null;
@@ -88,6 +96,7 @@ class RPCManager {
   }
 
   async check() {
+    if (isShuttingDown) return;
     if (this.client && this.readyResp) return;
     if (this.clientId && this.lastActivity) {
       send.info(`Has activity, reconnecting...`);
@@ -102,6 +111,8 @@ class RPCManager {
     clientIdOrReconnect: string | true,
     autoReconnect?: true,
   ): Promise<void> {
+    if (isShuttingDown) return;
+
     if (typeof clientIdOrReconnect === "string" && autoReconnect) {
       return this.scheduleConnect(clientIdOrReconnect);
     }
@@ -119,22 +130,47 @@ class RPCManager {
 
     this.readyResp = await this.client.login({ clientId: clientIdOrReconnect });
 
-    ((this.client as any).connection.socket as Socket).on("close", () => {
-      send.warn(`Socket closed, reconnecting...`);
-      this.scheduleConnect(clientIdOrReconnect);
-    });
+    const socket = (this.client as any).connection?.socket as Socket | undefined;
+    if (socket) {
+      socket.on("close", () => {
+        if (!isShuttingDown) {
+          send.warn(`Socket closed, reconnecting...`);
+          this.scheduleConnect(clientIdOrReconnect);
+        }
+      });
+      socket.on("error", (err) => {
+        send.error(err);
+      });
+    }
   }
 
   async destroy() {
-    send.destroyed(this.clientId!);
-    await this.client?.destroy();
+    // Clear reconnect timer first
+    if (this.reconnectInterval) {
+      clearTimeout(this.reconnectInterval);
+      this.reconnectInterval = null;
+    }
+    this.reconnectAttempts = 0;
+
+    if (this.clientId) {
+      send.destroyed(this.clientId);
+    }
+
+    try {
+      await this.client?.destroy();
+    } catch {
+      // Ignore destroy errors during shutdown
+    }
+
     this.client = null;
     this.readyResp = null;
     this.lastActivity = null;
-    this.activityPayloads.delete(this.clientId!);
+    this.activityPayloads.clear();
   }
 
   async updateActivity(clientId: string, activity: ActivityPayload) {
+    if (isShuttingDown) return;
+
     if (this.client === null || this.readyResp === null) {
       await this.scheduleConnect(clientId);
     }
@@ -145,12 +181,17 @@ class RPCManager {
 
   compareActivities(activity: ActivityPayload): boolean {
     if (!this.lastActivity) return false;
-    const a = JSON.stringify(normalizeActivityForCompare(activity));
-    const b = JSON.stringify(normalizeActivityForCompare(this.lastActivity));
-    return a === b && !isTimestampsDifferent(activity, this.lastActivity);
+    // Check timestamps first (fast path)
+    if (isTimestampsDifferent(activity, this.lastActivity)) return false;
+    // Then compare normalized payloads
+    const a = normalizeActivityForCompare(activity);
+    const b = normalizeActivityForCompare(this.lastActivity);
+    return JSON.stringify(a) === JSON.stringify(b);
   }
 
   private async setActivity(clientId: string, activity: ActivityPayload) {
+    if (isShuttingDown) return;
+
     try {
       this.lastActivity = activity;
       this.activityPayloads.set(clientId, activity);
@@ -168,23 +209,31 @@ class RPCManager {
     }
 
     this.lastActivity = null;
-    await this.client?.clearActivity();
+    try {
+      await this.client?.clearActivity();
+    } catch {
+      // Ignore errors during clear
+    }
   }
 }
 
 const manager = new RPCManager();
 let exitInterval: NodeJS.Timeout | null = setTimeout(() => {
-  send.error(new Error("There's no client connected to Discord RPC"));
-  process.exit(1);
+  send.error(new Error("No client connected within 30s"));
+  gracefulShutdown(1);
 }, 30_000);
 
-Bun.listen({
+const server = Bun.listen({
   hostname: "0.0.0.0",
   port: RPC_PORT,
   socket: {
     async data(_socket, data) {
-      if (exitInterval) clearTimeout(exitInterval);
-      exitInterval = null;
+      if (isShuttingDown) return;
+
+      if (exitInterval) {
+        clearTimeout(exitInterval);
+        exitInterval = null;
+      }
 
       let json: Record<string, unknown>;
       try {
@@ -214,6 +263,7 @@ Bun.listen({
           }
           case "reconnect": {
             await manager.check();
+            break;
           }
         }
       } catch (error) {
@@ -221,10 +271,45 @@ Bun.listen({
       }
     },
     async close() {
-      send.warn("Main process closed, exiting...");
-      process.exit(0);
+      send.warn("Client socket closed, shutting down...");
+      await gracefulShutdown(0);
     },
   },
 });
+
+// Graceful shutdown function
+async function gracefulShutdown(code = 0) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  send.info("Graceful shutdown initiated...");
+
+  // Clear exit timeout
+  if (exitInterval) {
+    clearTimeout(exitInterval);
+    exitInterval = null;
+  }
+
+  // Destroy RPC client
+  try {
+    await manager.destroy();
+  } catch {
+    // Ignore errors during shutdown
+  }
+
+  // Stop the server
+  try {
+    server.stop();
+  } catch {
+    // Ignore errors during shutdown
+  }
+
+  process.exit(code);
+}
+
+// Handle process signals for graceful shutdown
+process.on("SIGINT", () => gracefulShutdown(0));
+process.on("SIGTERM", () => gracefulShutdown(0));
+process.on("SIGHUP", () => gracefulShutdown(0));
 
 send.ready();
