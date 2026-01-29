@@ -41,3 +41,4 @@ runs:
         pnpm install --frozen-lockfile --prefer-offline --loglevel error
       env:
         HUSKY: "0"
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
