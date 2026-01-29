@@ -143,20 +143,20 @@ export async function updateActivity(
     },
     ...(partyId && partySize && partyMax
       ? {
-        party: {
-          id: partyId,
-          size: [partySize, partyMax],
-        },
-      }
+          party: {
+            id: partyId,
+            size: [partySize, partyMax],
+          },
+        }
       : {}),
     buttons: [
       ...(game?.url.game
         ? [
-          {
-            label: "Play Now",
-            url: game?.url.game,
-          },
-        ]
+            {
+              label: "Play Now",
+              url: game?.url.game,
+            },
+          ]
         : []),
       ...(buttons || []),
     ],

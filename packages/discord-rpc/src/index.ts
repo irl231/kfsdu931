@@ -40,7 +40,7 @@ export class DiscordRPC {
         accessSync(join(distDir, BINARY_NAME));
         hasBinary = true;
       }
-    } catch { }
+    } catch {}
 
     if (!hasBinary && process.env.BUN_INSTALL) {
       await new Promise((resolve) =>

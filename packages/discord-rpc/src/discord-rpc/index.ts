@@ -39,17 +39,21 @@ class RPCManager {
   private clientId: string | null;
   private client: Client | null;
   private readyResp: ReadyResponse | null;
+  private currentSocket: Socket | null = null;
 
   private activityPayloads: Map<string, ActivityPayload>;
   private lastActivity: ActivityPayload | null;
 
   private reconnectAttempts = 0;
   private reconnectInterval: NodeJS.Timeout | null = null;
+  private isReconnecting = false;
+  private isSwitchingClient = false;
 
   constructor() {
     this.clientId = null;
     this.client = new Client();
     this.readyResp = null;
+    this.currentSocket = null;
 
     this.activityPayloads = new Map();
     this.lastActivity = null;
@@ -57,40 +61,59 @@ class RPCManager {
 
   private async scheduleConnect(clientId: string): Promise<void> {
     if (isShuttingDown) return;
-    if (this.reconnectInterval) clearTimeout(this.reconnectInterval);
+    if (this.isReconnecting) {
+      send.info(`Already reconnecting, skipping duplicate request`);
+      return;
+    }
+
+    this.isReconnecting = true;
+
+    if (this.reconnectInterval) {
+      clearTimeout(this.reconnectInterval);
+      this.reconnectInterval = null;
+    }
+
     this.reconnectAttempts++;
     const delay = Math.min(
       RECONNECT_CONFIG.initialDelay *
-      RECONNECT_CONFIG.multiplier ** (this.reconnectAttempts - 1),
+        RECONNECT_CONFIG.multiplier ** (this.reconnectAttempts - 1),
       RECONNECT_CONFIG.maxDelay,
     );
 
     return new Promise((resolve, reject) => {
-      this.reconnectInterval = setTimeout(() => {
+      this.reconnectInterval = setTimeout(async () => {
         if (isShuttingDown) {
+          this.isReconnecting = false;
           resolve();
           return;
         }
         if (this.reconnectAttempts >= RECONNECT_CONFIG.maxAttempts) {
           this.reconnectAttempts = 0;
+          this.isReconnecting = false;
           this.client = null;
           this.readyResp = null;
           reject(new Error("Max reconnect attempts reached"));
           return;
         }
 
-        this.connect(clientId)
-          .then(() => {
-            if (this.lastActivity) {
-              send.info(`Reconnected, setting activity...`);
-              this.setActivity(clientId, this.lastActivity!);
-            }
+        try {
+          await this.connect(clientId);
+          this.isReconnecting = false;
+          if (this.lastActivity) {
+            send.info(`Reconnected, setting activity...`);
+            await this.setActivity(clientId, this.lastActivity!);
+          }
+          resolve();
+        } catch (_error) {
+          this.isReconnecting = false;
+          send.warn(`Failed to reconnect, retrying in ${delay}ms...`);
+          try {
+            await this.scheduleConnect(clientId);
             resolve();
-          })
-          .catch(() => {
-            send.warn(`Failed to reconnect, retrying in ${delay}ms...`);
-            this.scheduleConnect(clientId);
-          });
+          } catch (e) {
+            reject(e);
+          }
+        }
       }, delay);
     });
   }
@@ -131,13 +154,24 @@ class RPCManager {
 
     this.readyResp = await this.client.login({ clientId: clientIdOrReconnect });
 
-    const socket = (this.client as any).connection?.socket as Socket | undefined;
+    // Clean up previous socket listeners
+    if (this.currentSocket) {
+      this.currentSocket.removeAllListeners();
+      this.currentSocket = null;
+    }
+
+    const socket = (this.client as any).connection?.socket as
+      | Socket
+      | undefined;
     if (socket) {
+      this.currentSocket = socket;
+
       socket.on("close", () => {
-        if (!isShuttingDown) {
+        // Use this.clientId to get current clientId, not closure
+        if (!isShuttingDown && !this.isSwitchingClient && this.clientId) {
           send.warn(`Socket closed, reconnecting...`);
           this.reconnectAttempts = 0;
-          this.scheduleConnect(clientIdOrReconnect);
+          this.scheduleConnect(this.clientId);
         }
       });
       socket.on("error", (err) => {
@@ -153,6 +187,13 @@ class RPCManager {
       this.reconnectInterval = null;
     }
     this.reconnectAttempts = 0;
+    this.isReconnecting = false;
+
+    // Clean up socket listeners BEFORE destroying
+    if (this.currentSocket) {
+      this.currentSocket.removeAllListeners();
+      this.currentSocket = null;
+    }
 
     if (this.clientId) {
       send.destroyed(this.clientId);
@@ -177,12 +218,32 @@ class RPCManager {
   async updateActivity(clientId: string, activity: ActivityPayload) {
     if (isShuttingDown) return;
 
-    if (typeof this.clientId === "string" && typeof clientId === "string" && this.clientId !== clientId) {
+    const needsClientSwitch =
+      typeof this.clientId === "string" &&
+      typeof clientId === "string" &&
+      this.clientId !== clientId;
+
+    if (needsClientSwitch) {
       send.info(`Client ID changed, reconnecting...`);
+      // Set flag to prevent socket close handler from triggering reconnect
+      this.isSwitchingClient = true;
+
+      // Store the activity before destroying
+      const activityToRestore = activity;
+
       await this.destroy();
+
+      // Set the new clientId BEFORE scheduleConnect
+      this.clientId = clientId;
+      this.lastActivity = activityToRestore;
+
+      // Reset flag
+      this.isSwitchingClient = false;
     }
 
     if (this.client === null || this.readyResp === null) {
+      // Ensure clientId is set before scheduling connect
+      this.clientId = clientId;
       await this.scheduleConnect(clientId);
     }
 

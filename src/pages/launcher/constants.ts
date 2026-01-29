@@ -180,7 +180,7 @@ export const GAMES: Game[] = [
     id: `${tld.domain}-${url.pathname}`,
     image:
       GAME_IMAGES[
-      x.name.toLowerCase().replace(/\s/g, "") as keyof typeof GAME_IMAGES
+        x.name.toLowerCase().replace(/\s/g, "") as keyof typeof GAME_IMAGES
       ],
     ...x,
   };
