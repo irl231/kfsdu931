@@ -48,18 +48,17 @@ export function LeftSidebar({
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className="absolute flex z-20 w-[72px] h-full"
     >
-      <div className="flex flex-col w-full items-center pt-3 pb-6 bg-app-primary/70 backdrop-blur-lg">
+      <div className="flex flex-col w-full items-center pt-3 pb-6 bg-app-primary">
         <button
           type="button"
           className="mb-3 flex-shrink-0 flex flex-col items-center gap-1 group cursor-pointer outline-none"
           onClick={onShowGallery}
         >
           <div
-            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 border border-white/5 ${
-              viewMode === "gallery"
+            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 border border-white/5 ${viewMode === "gallery"
                 ? "bg-app-accent text-black"
                 : "bg-white/5 text-app-text-primary/50 hover:bg-white/10 hover:text-app-text-primary"
-            }`}
+              }`}
           >
             <IconLayoutGrid size={20} />
           </div>

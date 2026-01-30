@@ -183,8 +183,10 @@ export function LauncherPage() {
                         className="absolute inset-0"
                       >
                         <BackgroundImage src={activeGame.image.background} />
-                        <div className="absolute inset-0 bg-gradient-to-r from-app-primary via-app-primary/80 to-transparent" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-app-primary via-app-primary/40 to-transparent" />
+                        <div className="absolute inset-0" style={{ left: "72px" }}>
+                          <div className="absolute inset-0 bg-gradient-to-r from-app-primary via-app-primary/80 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-app-primary via-app-primary/40 to-transparent" />
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -198,11 +200,10 @@ export function LauncherPage() {
                     transition={{ duration: 0.2, ease: "easeInOut" }}
                   />
                   <div
-                    className={`relative flex-grow transition-opacity duration-200 ${
-                      isLauncherActive
-                        ? "opacity-100 z-10"
-                        : "opacity-0 z-0 pointer-events-none"
-                    }`}
+                    className={`relative flex-grow transition-opacity duration-200 ${isLauncherActive
+                      ? "opacity-100 z-10"
+                      : "opacity-0 z-0 pointer-events-none"
+                      }`}
                   >
                     <AnimatePresence mode="wait">
                       {viewMode === "gallery" && (
@@ -228,9 +229,8 @@ export function LauncherPage() {
                     </AnimatePresence>
                   </div>
                   <div
-                    className={`absolute z-20 w-full h-full ${
-                      isLauncherActive && "pointer-events-none"
-                    }`}
+                    className={`absolute z-20 w-full h-full ${isLauncherActive && "pointer-events-none"
+                      }`}
                   >
                     {stableTabs.map((tab) => (
                       <motion.div

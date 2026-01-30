@@ -29,9 +29,9 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
             }}
           />
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            initial={{ opacity: 0, y: 50, scale: 0.4 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
             className="absolute inset-0 md:left-auto md:right-0 md:w-[70%] h-full overflow-visible"
           >
             <motion.div

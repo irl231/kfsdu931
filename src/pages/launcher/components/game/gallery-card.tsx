@@ -106,9 +106,14 @@ function GalleryCardComponent({
         className={`absolute inset-0 mix-blend-lighten bg-gradient-to-t from-app-accent from-[-20%] to-transparent to-[60%] transition-opacity duration-500 pointer-events-none ${showActiveState ? "opacity-100" : "opacity-0"}`}
       />
       <div
-        className={`absolute mix-blend-overlay inset-0 rounded-xl border-[3px] border-white duration-500 pointer-events-none ${showActiveState ? "opacity-50" : "opacity-0"}`}
+        className={`absolute mix-blend-multiply inset-0 rounded-xl bg-app-accent duration-500 pointer-events-none ${showActiveState ? "opacity-50" : "opacity-0"}`}
       />
-
+      <div
+        className={`absolute mix-blend-overlay inset-0 rounded-xl m-2 border border-white duration-500 pointer-events-none ${showActiveState ? "opacity-50" : "opacity-0"}`}
+      />
+      <div
+        className={`absolute mix-blend-overlay inset-0 rounded-xl border border-app-primary duration-500 pointer-events-none ${showActiveState ? "opacity-50" : "opacity-0"}`}
+      />
       <div className="absolute bottom-0 left-0 w-full p-5 z-10 flex flex-col justify-end items-start">
         <h3
           className={`text-xl font-bold leading-none drop-shadow-md transition-all duration-300 ${showActiveState ? "text-white -translate-y-1" : "text-app-text-secondary"}`}
