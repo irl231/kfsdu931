@@ -38,7 +38,7 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
               initial={{ scale: 1.1, opacity: 0 }}
               animate={{ scale: 1, opacity: 0.8 }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
-              className="absolute inset-0 md:w-[125%] xl:w-[135%] bg-cover bg-center md:bg-[-4rem_-2rem] xl:bg-[-10rem_-2rem] bg-no-repeat overflow-visible"
+              className="absolute inset-0 md:w-[125%] lg:w-[130%] xl:w-[135%] bg-cover bg-center md:bg-[-4rem_-1.7rem] lg:bg-[-8rem_-2rem] xl:bg-[-10rem_-2rem] bg-no-repeat overflow-visible"
               style={{ backgroundImage: `url(${coverImage})` }}
             />
           </motion.div>
@@ -49,13 +49,13 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
             transition={{ delay: 0.2 }}
             className="absolute bottom-0 left-0 p-4 sm:p-6 md:p-10 max-w-4xl z-10"
           >
-            <h1 className="text-6xl md:text-8xl xl:text-9xl font-title font-bold text-white mb-2 md:mb-3 drop-shadow-lg tracking-tight transition-colors duration-300">
+            <h1 className="tracking-tight text-8xl xl:text-9xl font-title font-black text-white mb-4 leading-[0.9]">
               <span>{appName.slice(0, 2).toUpperCase()}</span>
               <span className="text-app-accent">
                 {appName.slice(2).toLowerCase()}
               </span>
             </h1>
-            <p className="text-app-text-primary/80 group-hover:text-app-text-primary text-base md:text-md max-w-xl transition-colors duration-300">
+            <p className="text-app-text-primary text-sm max-w-xl">
               One launcher for all adventures.
             </p>
           </motion.div>

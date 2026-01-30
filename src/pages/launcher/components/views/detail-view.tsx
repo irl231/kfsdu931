@@ -81,11 +81,11 @@ function DetailViewComponent({
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <h1 className="text-8xl xl:text-9xl text-pretty font-title font-black text-white mb-4 tracking-tighter drop-shadow-2xl leading-[0.9]">
+          <h1 className="tracking-tight text-8xl xl:text-9xl font-title font-black text-white mb-4 leading-[0.9]">
             {game.name}
           </h1>
 
-          <p className="text-base text-pretty text-app-text-primary/80 leading-relaxed max-w-md mb-10 drop-shadow-md">
+          <p className="text-sm text-pretty text-app-text-primary leading-relaxed max-w-md mb-10">
             {game.desc}
           </p>
 
