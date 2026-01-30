@@ -55,10 +55,11 @@ export function LeftSidebar({
           onClick={onShowGallery}
         >
           <div
-            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 border border-white/5 ${viewMode === "gallery"
+            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 border border-white/5 ${
+              viewMode === "gallery"
                 ? "bg-app-accent text-black"
                 : "bg-white/5 text-app-text-primary/50 hover:bg-white/10 hover:text-app-text-primary"
-              }`}
+            }`}
           >
             <IconLayoutGrid size={20} />
           </div>

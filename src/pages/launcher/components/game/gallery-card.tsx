@@ -76,7 +76,9 @@ function GalleryCardComponent({
       key={key}
       data-active={showActiveState}
     >
-      <div className={`w-full h-full overflow-hidden rounded-xl bg-app-primary relative`}>
+      <div
+        className={`w-full h-full overflow-hidden rounded-xl bg-app-primary relative`}
+      >
         {game.image.background ? (
           <motion.img
             src={game.image.background}
