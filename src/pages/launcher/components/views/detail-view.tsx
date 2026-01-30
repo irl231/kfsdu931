@@ -81,17 +81,11 @@ function DetailViewComponent({
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="flex items-center gap-3 mb-2 opacity-80">
-            <div className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/10 border border-white/5 uppercase tracking-widest text-app-text-primary/80">
-              MMORPG
-            </div>
-          </div>
-
-          <h1 className="text-7xl font-black text-white mb-4 tracking-tighter drop-shadow-2xl leading-[0.9]">
+          <h1 className="text-8xl font-title font-black text-white mb-4 tracking-tighter drop-shadow-2xl leading-[0.9]">
             {game.name}
           </h1>
 
-          <p className="text-md text-app-text-primary/80 leading-relaxed max-w-md mb-10 drop-shadow-md">
+          <p className="text-sm text-app-text-primary/80 leading-relaxed max-w-md mb-10 drop-shadow-md">
             {game.desc}
           </p>
 

@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   :root {
     --bg-primary: #9fb0c1;
     --bg-secondary: #8d9398;
@@ -14,9 +20,9 @@
   }
 
   .dark {
-    --bg-primary: #141517;
-    --bg-secondary: #1c1d1f;
-    --bg-tertiary: #273444;
+    --bg-primary: #161719;
+    --bg-secondary: #232527;
+    --bg-tertiary: #294146;
     --accent: #2cef9e;
     --text-primary: #9da5b6;
     --text-secondary: #dfe2ea;
@@ -28,78 +34,65 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-}
 
-body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    Segoe UI,
-    Roboto,
-    Helvetica Neue,
-    Arial,
-    Noto Sans,
-    Liberation Sans,
-    sans-serif,
-    Apple Color Emoji,
-    Segoe UI Emoji,
-    Segoe UI Symbol,
-    Noto Color Emoji;
-  color: var(--text-primary);
-  background: var(--bg-primary);
-  /* Optimize repaints */
-  transform: translateZ(0);
-  will-change: auto;
-}
+  .bg {
+    position: fixed;
+    z-index: 100;
+    top: -50%;
+    left: -50%;
+    right: -50%;
+    bottom: -50%;
+    width: 150%;
+    height: 200vh;
+    background: url(https://indieground.net/wp-content/uploads/2023/01/noise-01.png)
+      repeat;
+    background-repeat: repeat;
+    opacity: 0.7;
+    visibility: visible;
+    pointer-events: none;
+    display: block;
+  }
 
-/* Remove outline for mouse users, but keep for keyboard users */
-button[type="button"]:focus:not(:focus-visible) {
-  outline: none;
-}
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    user-select: none;
+    font-family: var(--font-sans);
+    font-feature-settings: "cv01", "cv02", "cv03", "cv04", "ss01";
+    -webkit-font-smoothing: antialiased;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    /* Optimize repaints */
+    transform: translateZ(0);
+    will-change: auto;
+  }
 
-/* Enhanced focus styles for keyboard navigation (WCAG 2.2) */
-button[type="button"]:focus-visible,
-a:focus-visible,
-[role="button"]:focus-visible,
-[role="tab"]:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+  /* Lock width at 480px for smaller screens to prevent horizontal resizing */
+  @media (max-width: 479px) {
+    html,
+    body {
+      width: 480px;
+      min-width: 480px;
+      max-width: 480px;
+      overflow-x: hidden;
+    }
+  }
 
-/* Custom focus ring for interactive elements */
-.focus-ring {
-  outline: none;
-}
+  /* Remove outline for mouse users, but keep for keyboard users */
+  button[type="button"]:focus:not(:focus-visible) {
+    outline: none;
+  }
 
-.focus-ring:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.mask-gradient-right {
-  mask-image: linear-gradient(
-    to right,
-    var(--bg-primary) 90%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to right,
-    var(--bg-primary) 90%,
-    transparent 100%
-  );
+  /* Enhanced focus styles for keyboard navigation (WCAG 2.2) */
+  button[type="button"]:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  [role="tab"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
 #draggable {
@@ -108,28 +101,35 @@ a:focus-visible,
   overflow: hidden;
 }
 
-/* Utility classes for performance optimization */
 @layer utilities {
-  /* GPU acceleration for smooth animations */
-  .gpu-accelerated {
-    transform: translateZ(0);
-    will-change: transform;
+  .text-stroke {
+    text-shadow:
+      -1px -1px 0 #000,
+      1px -1px 0 #000,
+      -1px 1px 0 #000,
+      1px 1px 0 #000;
   }
 
-  /* Optimize image rendering */
-  .optimized-img {
-    image-rendering: crisp-edges;
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 
-  /* Prevent layout shift */
-  .prevent-shift {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 500px;
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
-  /* Smooth scroll for better UX */
-  .smooth-scroll {
-    scroll-behavior: smooth;
+  .mask-gradient-right {
+    mask-image: linear-gradient(
+      to right,
+      var(--bg-primary) 90%,
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      var(--bg-primary) 90%,
+      transparent 100%
+    );
   }
 
   /* Reduce motion for accessibility (WCAG 2.2) */

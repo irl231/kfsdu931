@@ -43,12 +43,12 @@ export function LeftSidebar({
   return (
     <motion.div
       initial={{ x: -80 }}
-      animate={{ x: isVisible ? 8 : -80 }}
+      animate={{ x: isVisible ? 0 : -80 }}
       exit={{ x: -80 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className="absolute flex z-20 w-[72px] h-full"
     >
-      <div className="flex my-2 flex-col w-full items-center pt-3 pb-6 bg-app-primary/50 rounded-2xl shadow-lg border border-white/10 backdrop-blur-lg">
+      <div className="flex flex-col w-full items-center pt-3 pb-6 bg-app-primary/70 backdrop-blur-lg">
         <button
           type="button"
           className="mb-3 flex-shrink-0 flex flex-col items-center gap-1 group cursor-pointer outline-none"

@@ -7,6 +7,11 @@ const config: Config = {
   content: ["./src/**/*.{html,js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: "var(--font-sans)",
+        mono: "var(--font-mono)",
+        title: "var(--font-title)",
+      },
       keyframes: {
         blink: {
           "0%": { opacity: "0.5" },

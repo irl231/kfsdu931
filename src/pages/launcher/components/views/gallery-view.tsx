@@ -1,8 +1,6 @@
 import coverImage from "@assets/img/cover.png";
-import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { GAMES } from "../../constants";
-import { GalleryCard } from "../game";
+import { motion } from "motion/react";
+import { GamesSwiper } from "./games-swiper";
 
 interface GalleryViewProps {
   appName: string;
@@ -10,38 +8,6 @@ interface GalleryViewProps {
 }
 
 export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
-  const galleryRef = useRef<HTMLDivElement>(null);
-  const [showLeftFade, setShowLeftFade] = useState(false);
-  const [showRightFade, setShowRightFade] = useState(true);
-
-  // Memoize scroll handler - follows `rerender-defer-reads` pattern
-  const checkGalleryScroll = useCallback(() => {
-    const gallery = galleryRef.current;
-    if (!gallery) return;
-
-    const { scrollLeft, scrollWidth, clientWidth } = gallery;
-    setShowLeftFade(scrollLeft > 20);
-    setShowRightFade(scrollLeft < scrollWidth - clientWidth - 20);
-  }, []);
-
-  // Use passive event listener for scroll performance (WCAG 2.2)
-  useEffect(() => {
-    const gallery = galleryRef.current;
-    if (!gallery) return;
-
-    gallery.scrollTo({ left: 0, behavior: "instant" });
-
-    const timeoutId = setTimeout(checkGalleryScroll, 100);
-
-    // Add passive scroll listener for better performance
-    gallery.addEventListener("scroll", checkGalleryScroll, { passive: true });
-
-    return () => {
-      clearTimeout(timeoutId);
-      gallery.removeEventListener("scroll", checkGalleryScroll);
-    };
-  }, [checkGalleryScroll]);
-
   return (
     <motion.section
       initial={{ opacity: 0 }}
@@ -51,8 +17,8 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
       className="absolute inset-0 flex"
       aria-label="Game gallery"
     >
-      <div className="flex-1 relative flex flex-col">
-        <div className="flex-1 relative overflow-hidden w-full group">
+      <div className="flex-1 min-h-0 relative flex flex-col overflow-hidden">
+        <div className="flex-1 relative overflow-visible w-full group">
           <div
             className="absolute inset-0 z-0"
             style={{
@@ -62,64 +28,40 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
               backgroundPosition: "-1px -1px",
             }}
           />
-          <div
-            className="absolute inset-0 bg-cover bg-[center_-2rem] opacity-80 transition-transform duration-[15s] group-hover:scale-105"
-            style={{ backgroundImage: `url(${coverImage})` }}
-          />
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="absolute inset-0 md:left-auto md:right-0 md:w-[70%] h-full overflow-visible"
+          >
+            <motion.div
+              initial={{ scale: 1.1, opacity: 0 }}
+              animate={{ scale: 1, opacity: 0.8 }}
+              transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+              className="absolute inset-0 md:w-[125%] xl:w-[135%] bg-cover bg-center md:bg-[-3.5rem_-2rem] xl:bg-[-10rem_-2rem] bg-no-repeat overflow-visible"
+              style={{ backgroundImage: `url(${coverImage})` }}
+            />
+          </motion.div>
           <div className="absolute inset-0 bg-gradient-to-t from-app-primary via-transparent to-transparent" />
-          <div className="absolute bottom-0 left-0 p-10 max-w-4xl z-10">
-            <h1 className="text-4xl font-bold text-white mb-3 drop-shadow-lg tracking-tight transition-colors duration-300">
-              {appName}
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="absolute bottom-0 left-0 p-4 sm:p-6 md:p-10 max-w-4xl z-10"
+          >
+            <h1 className="text-6xl md:text-8xl xl:text-9xl font-title font-bold text-white mb-2 md:mb-3 drop-shadow-lg tracking-tight transition-colors duration-300">
+              <span>{appName.slice(0, 2).toUpperCase()}</span>
+              <span className="text-app-accent">
+                {appName.slice(2).toLowerCase()}
+              </span>
             </h1>
-            <p className="text-app-text-primary/80 group-hover:text-app-text-primary text-md max-w-xl transition-colors duration-300">
+            <p className="text-app-text-primary/80 group-hover:text-app-text-primary text-sm md:text-md max-w-xl transition-colors duration-300">
               One launcher for all adventures.
             </p>
-          </div>
+          </motion.div>
         </div>
 
-        <div className="flex-shrink-0 w-full bg-app-primary pt-8 border-t border-white/5 z-20 relative">
-          <AnimatePresence>
-            {showLeftFade && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-app-primary to-transparent z-30 pointer-events-none"
-              />
-            )}
-          </AnimatePresence>
-          <AnimatePresence>
-            {showRightFade && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-app-primary to-transparent z-30 pointer-events-none"
-              />
-            )}
-          </AnimatePresence>
-
-          <div className="px-10 flex items-center gap-3 mb-4 relative z-40">
-            <h2 className="text-xl font-bold text-white">All Games</h2>
-          </div>
-
-          <div
-            ref={galleryRef}
-            className="flex gap-4 overflow-x-auto snap-x snap-mandatory px-10 no-scrollbar scroll-pl-10 w-full pb-10"
-            role="list"
-            aria-label="Available games"
-          >
-            {GAMES.map((game, index) => (
-              <GalleryCard
-                key={game.id}
-                game={game}
-                index={index}
-                onClick={() => onSelectGame(game.id)}
-              />
-            ))}
-            <div className="flex-shrink-0 w-6" />
-          </div>
-        </div>
+        <GamesSwiper onSelectGame={onSelectGame} />
       </div>
     </motion.section>
   );

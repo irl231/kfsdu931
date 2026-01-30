@@ -92,7 +92,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50"
         onClick={onClose}
       />
       <motion.div
@@ -118,7 +118,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             />
           </div>
 
-          <div className="text-[10px] text-app-text-primary/20 font-mono text-center border-t border-white/5 pt-4">
+          <div className="text-xs text-app-text-primary/20 font-mono text-center border-t border-white/5 pt-4">
             {appName} - v{appVersion}
           </div>
         </div>

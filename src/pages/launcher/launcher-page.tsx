@@ -168,92 +168,96 @@ export function LauncherPage() {
                 )}
               </AnimatePresence>
 
-              <div className="bg-app-primary absolute inset-0 z-0">
-                <AnimatePresence mode="wait">
-                  {viewMode === "detail" && selectedGameId && (
-                    <motion.div
-                      key={selectedGameId}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="absolute inset-0"
-                    >
-                      <BackgroundImage src={activeGame.image.background} />
-                      <div className="absolute inset-0 bg-gradient-to-r from-app-primary via-app-primary/80 to-transparent" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-app-primary via-app-primary/40 to-transparent" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <div className="relative h-full w-full flex flex-row">
-                <motion.div
-                  initial={false}
-                  animate={{ width: isLauncherActive ? 80 : 0 }}
-                  className="h-full relative flex-shrink-0"
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                />
-                <div
-                  className={`relative flex-grow transition-opacity duration-200 ${
-                    isLauncherActive
-                      ? "opacity-100 z-10"
-                      : "opacity-0 z-0 pointer-events-none"
-                  }`}
-                >
+              {/* Main Content */}
+              <div className="relative h-full w-full">
+                {/* Background */}
+                <div className="bg-app-primary absolute inset-0 z-0">
                   <AnimatePresence mode="wait">
-                    {viewMode === "gallery" && (
-                      <div className="relative w-full h-full">
-                        <GalleryView
-                          appName={appName}
-                          onSelectGame={handleSelectGame}
-                        />
-                      </div>
-                    )}
-                  </AnimatePresence>
-
-                  <AnimatePresence>
                     {viewMode === "detail" && selectedGameId && (
-                      <DetailView
-                        game={activeGame}
-                        isLoading={isGameLoading(activeGame.url.game)}
-                        isOpen={isGameOpen(activeGame.url.game)}
-                        onPlay={handlePlay}
-                        onToggleSidebar={handleToggleSidebar}
-                      />
+                      <motion.div
+                        key={selectedGameId}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute inset-0"
+                      >
+                        <BackgroundImage src={activeGame.image.background} />
+                        <div className="absolute inset-0 bg-gradient-to-r from-app-primary via-app-primary/80 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-app-primary via-app-primary/40 to-transparent" />
+                      </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-                <div
-                  className={`absolute z-20 w-full h-full ${
-                    isLauncherActive && "pointer-events-none"
-                  }`}
-                >
-                  {stableTabs.map((tab) => (
-                    <motion.div
-                      key={tab.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: activeTopTab === tab.id ? 1 : 0 }}
-                      exit={{
-                        opacity: 0,
-                        transition: { duration: 0.2 },
-                      }}
-                      className={
-                        `absolute z-40 w-full h-full` +
-                        (activeTopTab === tab.id
-                          ? " pointer-events-auto"
-                          : " pointer-events-none")
-                      }
-                    >
-                      <Webview
-                        tab={tab}
-                        isActive={activeTopTab === tab.id}
-                        onTitleUpdate={updateTabTitle}
-                        onUrlChanged={updateTabUrl}
-                        onClose={(id) => closeTab(null, id)}
-                      />
-                    </motion.div>
-                  ))}
+
+                <div className="relative h-full w-full flex flex-row">
+                  <motion.div
+                    initial={false}
+                    animate={{ width: isLauncherActive ? 80 : 0 }}
+                    className="h-full relative flex-shrink-0"
+                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                  />
+                  <div
+                    className={`relative flex-grow transition-opacity duration-200 ${
+                      isLauncherActive
+                        ? "opacity-100 z-10"
+                        : "opacity-0 z-0 pointer-events-none"
+                    }`}
+                  >
+                    <AnimatePresence mode="wait">
+                      {viewMode === "gallery" && (
+                        <div className="relative w-full h-full">
+                          <GalleryView
+                            appName={appName}
+                            onSelectGame={handleSelectGame}
+                          />
+                        </div>
+                      )}
+                    </AnimatePresence>
+
+                    <AnimatePresence>
+                      {viewMode === "detail" && selectedGameId && (
+                        <DetailView
+                          game={activeGame}
+                          isLoading={isGameLoading(activeGame.url.game)}
+                          isOpen={isGameOpen(activeGame.url.game)}
+                          onPlay={handlePlay}
+                          onToggleSidebar={handleToggleSidebar}
+                        />
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <div
+                    className={`absolute z-20 w-full h-full ${
+                      isLauncherActive && "pointer-events-none"
+                    }`}
+                  >
+                    {stableTabs.map((tab) => (
+                      <motion.div
+                        key={tab.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: activeTopTab === tab.id ? 1 : 0 }}
+                        exit={{
+                          opacity: 0,
+                          transition: { duration: 0.2 },
+                        }}
+                        className={
+                          `absolute z-40 w-full h-full` +
+                          (activeTopTab === tab.id
+                            ? " pointer-events-auto"
+                            : " pointer-events-none")
+                        }
+                      >
+                        <Webview
+                          tab={tab}
+                          isActive={activeTopTab === tab.id}
+                          onTitleUpdate={updateTabTitle}
+                          onUrlChanged={updateTabUrl}
+                          onClose={(id) => closeTab(null, id)}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

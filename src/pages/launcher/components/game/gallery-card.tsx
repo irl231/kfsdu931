@@ -4,14 +4,29 @@ import { memo, useEffect, useState } from "react";
 import type { Game } from "../../constants";
 
 interface GalleryCardProps {
+  key: string;
   game: Game;
   onClick: () => void;
   index: number;
+  className?: string;
+  isActive?: boolean;
+  onHoverChange?: (isHovered: boolean) => void;
 }
 
-function GalleryCardComponent({ game, onClick, index }: GalleryCardProps) {
+function GalleryCardComponent({
+  key,
+  game,
+  onClick,
+  index,
+  className,
+  isActive = false,
+  onHoverChange,
+}: GalleryCardProps) {
   const [hover, setHover] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Determine if the card should show the "active/hovered" visual state
+  const showActiveState = hover || isActive;
 
   // Check if image is already loaded on mount
   useEffect(() => {
@@ -32,6 +47,16 @@ function GalleryCardComponent({ game, onClick, index }: GalleryCardProps) {
     });
   }, [game.image.background]);
 
+  const handleMouseEnter = () => {
+    setHover(true);
+    onHoverChange?.(true);
+  };
+
+  const handleMouseLeave = () => {
+    setHover(false);
+    onHoverChange?.(false);
+  };
+
   return (
     <motion.button
       type="button"
@@ -44,21 +69,23 @@ function GalleryCardComponent({ game, onClick, index }: GalleryCardProps) {
         ease: [0.25, 0.4, 0.25, 1],
       }}
       onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      className="snap-start flex-shrink-0 md:w-[calc(33.33%-11px)] xl:w-[calc(25%-12px)] aspect-[7/4] relative rounded-xl overflow-hidden cursor-pointer shadow-lg bg-app-secondary outline-none group transition-colors text-left"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={`snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[calc(50%-8px)] sm:max-w-none md:w-[calc(33.33%-11px)] xl:w-[calc(25%-12px)] aspect-[7/4] relative rounded-xl overflow-hidden cursor-pointer bg-app-secondary outline-none group text-left ${className}`}
       aria-label={`View ${game.name} details`}
+      key={key}
+      data-active={showActiveState}
     >
-      <div className="w-full h-full overflow-hidden bg-app-primary relative">
+      <div className="w-full h-full overflow-hidden rounded-xl bg-app-primary relative">
         {game.image.background ? (
           <motion.img
             src={game.image.background}
             className="w-full h-full object-cover object-top"
             initial={{ opacity: 0, filter: "blur(10px)" }}
             animate={{
-              opacity: imageLoaded ? (hover ? 0.5 : 1) : 0,
+              opacity: imageLoaded ? (showActiveState ? 0.5 : 1) : 0,
               filter: imageLoaded ? "blur(0px)" : "blur(10px)",
-              scale: hover ? 1.05 : 1,
+              scale: showActiveState ? 1.05 : 1,
             }}
             transition={{
               opacity: { duration: 0.5 },
@@ -75,10 +102,17 @@ function GalleryCardComponent({ game, onClick, index }: GalleryCardProps) {
       </div>
 
       <div className="absolute inset-0 opacity-90 bg-gradient-to-t from-app-primary from-0% to-transparent to-[80%] transition-opacity duration-300 pointer-events-none" />
-      <div className="absolute inset-0 mix-blend-lighten bg-gradient-to-t from-app-accent from-[-20%] to-transparent to-[60%] transition-opacity duration-500 opacity-0 group-hover:opacity-100 pointer-events-none" />
+      <div
+        className={`absolute inset-0 mix-blend-lighten bg-gradient-to-t from-app-accent from-[-20%] to-transparent to-[60%] transition-opacity duration-500 pointer-events-none ${showActiveState ? "opacity-100" : "opacity-0"}`}
+      />
+      <div
+        className={`absolute mix-blend-overlay inset-0 rounded-xl border-[3px] border-white duration-500 pointer-events-none ${showActiveState ? "opacity-50" : "opacity-0"}`}
+      />
 
       <div className="absolute bottom-0 left-0 w-full p-5 z-10 flex flex-col justify-end items-start">
-        <h3 className="text-xl text-app-text-secondary group-hover:text-white font-bold leading-none drop-shadow-md transition-transform duration-300 group-hover:-translate-y-1">
+        <h3
+          className={`text-xl font-bold leading-none drop-shadow-md transition-all duration-300 ${showActiveState ? "text-white -translate-y-1" : "text-app-text-secondary"}`}
+        >
           {game.name}
         </h3>
       </div>

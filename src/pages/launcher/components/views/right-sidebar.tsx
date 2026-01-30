@@ -38,10 +38,7 @@ export function RightSidebar({ isOpen, game, onClose }: RightSidebarProps) {
         className="relative w-[380px] h-full bg-app-secondary border-l border-white/10 shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 pb-4 border-b border-white/5 flex items-center justify-between flex-shrink-0 z-20 relative bg-inherit">
-          <h2 className="text-lg text-white font-bold text-app-text-primary flex items-center gap-2">
-            Game Info
-          </h2>
+        <div className="absolute right-0 top-0 bg-transparent p-6 pb-4 flex items-center justify-between flex-shrink-0 z-20">
           <button
             type="button"
             onClick={onClose}
