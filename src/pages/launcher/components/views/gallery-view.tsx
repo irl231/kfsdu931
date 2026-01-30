@@ -55,7 +55,7 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
                 {appName.slice(2).toLowerCase()}
               </span>
             </h1>
-            <p className="text-app-text-primary/80 group-hover:text-app-text-primary text-sm md:text-md max-w-xl transition-colors duration-300">
+            <p className="text-app-text-primary/80 group-hover:text-app-text-primary text-base md:text-md max-w-xl transition-colors duration-300">
               One launcher for all adventures.
             </p>
           </motion.div>

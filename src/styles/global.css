@@ -119,19 +119,6 @@
     scrollbar-width: none;
   }
 
-  .mask-gradient-right {
-    mask-image: linear-gradient(
-      to right,
-      var(--bg-primary) 90%,
-      transparent 100%
-    );
-    -webkit-mask-image: linear-gradient(
-      to right,
-      var(--bg-primary) 90%,
-      transparent 100%
-    );
-  }
-
   /* Reduce motion for accessibility (WCAG 2.2) */
   /* Important flags are necessary here to override animations for users with motion sensitivity */
   @media (prefers-reduced-motion: reduce) {
