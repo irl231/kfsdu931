@@ -38,7 +38,7 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
               initial={{ scale: 1.1, opacity: 0 }}
               animate={{ scale: 1, opacity: 0.8 }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
-              className="absolute inset-0 md:w-[125%] xl:w-[135%] bg-cover bg-center md:bg-[-3.5rem_-2rem] xl:bg-[-10rem_-2rem] bg-no-repeat overflow-visible"
+              className="absolute inset-0 md:w-[125%] xl:w-[135%] bg-cover bg-center md:bg-[-4rem_-2rem] xl:bg-[-10rem_-2rem] bg-no-repeat overflow-visible"
               style={{ backgroundImage: `url(${coverImage})` }}
             />
           </motion.div>
