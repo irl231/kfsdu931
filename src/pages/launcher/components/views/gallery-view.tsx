@@ -29,14 +29,14 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
             }}
           />
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.4 }}
+            initial={{ opacity: 0, y: 50, scale: 0.3 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="absolute inset-0 md:left-auto md:right-0 md:w-[70%] h-full overflow-visible"
           >
             <motion.div
-              initial={{ scale: 1.1, opacity: 0 }}
-              animate={{ scale: 1, opacity: 0.8 }}
+              initial={{ scale: 1.1 }}
+              animate={{ scale: 1 }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
               className="absolute inset-0 md:w-[125%] lg:w-[130%] xl:w-[135%] bg-cover bg-center md:bg-[-4rem_-1.7rem] lg:bg-[-8rem_-2rem] xl:bg-[-10rem_-2rem] bg-no-repeat overflow-visible"
               style={{ backgroundImage: `url(${coverImage})` }}
