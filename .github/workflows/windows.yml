@@ -63,6 +63,9 @@ jobs:
       - name: Setup pnpm
         uses: ./.github/workflows/actions/pnpm
 
+      - name: Setup bun
+        uses: ./.github/workflows/actions/bun
+
       - name: Prepare
         shell: bash
         run: |

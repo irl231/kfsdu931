@@ -38,6 +38,6 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
-        pnpm install --frozen-lockfile --prefer-offline --loglevel info
+        pnpm install --frozen-lockfile --prefer-offline
       env:
         HUSKY: "0"
