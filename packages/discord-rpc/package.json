@@ -24,7 +24,7 @@
     "prepublish": "bun run build",
     "build": "rm -rf dist && bun x tsc && bun run build:bin:platform",
     "build:bin": "bun build --compile --minify --bytecode --entrypoints src/discord-rpc/index.ts",
-    "build:bin:platform": "bun run ./scripts/build.ts"
+    "build:bin:platform": "node ./scripts/build.mjs"
   },
   "devDependencies": {
     "@types/bun": "latest"
