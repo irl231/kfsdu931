@@ -60,11 +60,11 @@ jobs:
       - name: Setup electron
         uses: ./.github/workflows/actions/electron
 
-      - name: Setup pnpm
-        uses: ./.github/workflows/actions/pnpm
-
       - name: Setup bun
         uses: ./.github/workflows/actions/bun
+
+      - name: Setup pnpm
+        uses: ./.github/workflows/actions/pnpm
 
       - name: Prepare
         shell: bash
