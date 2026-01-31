@@ -11,7 +11,7 @@ import type { ActivityPayload } from "./discord-rpc/types";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const BINARY_NAME = `discord-rpc-bun-${process.arch}${process.platform === "win32" ? ".exe" : ""}`;
+const BINARY_NAME = `discord-rpc-bun${process.platform === "darwin" ? `-${process.arch}` : ""}${process.platform === "win32" ? ".exe" : ""}`;
 const discordRPCDir = resolve(__dirname, "..");
 const binaryPath = new fdir()
   .withFullPaths()

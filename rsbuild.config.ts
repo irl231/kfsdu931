@@ -82,10 +82,17 @@ export default defineConfig(({ env }) => {
                 ]
               : []),
 
-            ...["arm64", "x64"].map((arch) => ({
-              from: discordRpcPath.replace("[arch]", arch),
-              to: path.resolve(process.cwd(), ELECTRON_OUT_DIR),
-            })),
+            ...(process.platform === "darwin"
+              ? ["arm64", "x64"].map((arch) => ({
+                  from: discordRpcPath.replace("[arch]", arch),
+                  to: path.resolve(process.cwd(), ELECTRON_OUT_DIR),
+                }))
+              : [
+                  {
+                    from: discordRpcPath.replace("[arch]", ""),
+                    to: path.resolve(process.cwd(), ELECTRON_OUT_DIR),
+                  },
+                ]),
           ],
         }),
       ]);
