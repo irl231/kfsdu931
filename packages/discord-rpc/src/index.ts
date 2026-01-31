@@ -30,7 +30,7 @@ const getBunBinPath = () => {
   );
 };
 
-export type { ActivityPayload } from "./discord-rpc/types";
+export * from "./discord-rpc/types";
 
 export class DiscordRPC {
   private socket: Socket | null = null;

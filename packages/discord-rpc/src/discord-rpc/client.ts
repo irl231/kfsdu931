@@ -109,6 +109,7 @@ export class Client extends EventEmitter {
     accessToken?: string;
   }): Promise<ReadyResponse> {
     this.clientId = clientId;
+
     await this.connection.connect();
 
     return new Promise((resolve) => {

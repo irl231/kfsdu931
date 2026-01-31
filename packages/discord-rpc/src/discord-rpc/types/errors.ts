@@ -1,7 +1,7 @@
 /**
  * Enum for error codes.
  */
-export enum Error {
+export enum ErrorCode {
   CAPTURE_SHORTCUT_ALREADY_LISTENING = 5004,
   GET_GUILD_TIMED_OUT = 5002,
   INVALID_ACTIVITY_JOIN_REQUEST = 4012,
