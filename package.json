@@ -59,13 +59,7 @@
     "packages/*",
     "./"
   ],
-  "overrides": {
-    "undici": "^5.29.0"
-  },
   "pnpm": {
-    "overrides": {
-      "undici": "^5.29.0"
-    },
     "onlyBuiltDependencies": [
       "core-js",
       "electron",
