@@ -30,6 +30,11 @@ export class Client extends EventEmitter {
   private isReady = false;
 
   /**
+   * The client ID of the Discord application
+   */
+  private clientId!: string;
+
+  /**
    * Initializes a new RPC Client instance.
    */
   constructor(options?: ClientOptions) {
@@ -44,6 +49,13 @@ export class Client extends EventEmitter {
     this.connection.onData((op: OpCode, data: any) => {
       this.handleIncoming(op, data);
     });
+  }
+
+  /**
+   * Returns the client ID of the Discord application.
+   */
+  get id() {
+    return this.clientId;
   }
 
   /**
