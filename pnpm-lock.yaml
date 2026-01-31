@@ -118,6 +118,9 @@ importers:
 
   packages/discord-rpc:
     dependencies:
+      fdir:
+        specifier: ^6.5.0
+        version: 6.5.0(picomatch@4.0.3)
       typescript:
         specifier: ^5
         version: 5.9.3

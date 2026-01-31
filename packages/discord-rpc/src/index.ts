@@ -5,14 +5,21 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ActivityPayload } from "discord-rpc-new";
+import { fdir } from "fdir";
 import { RPC_PORT } from "./constants";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const BINARY_NAME = `discord-rpc-bun${process.platform === "win32" ? ".exe" : ""}`;
-const pkgDir = resolve(__dirname, "..");
-const distDir = join(pkgDir, "dist");
+const discordRPCDir = resolve(__dirname, "..");
+const binaryPath = new fdir()
+  .withFullPaths()
+  .crawl(discordRPCDir)
+  .sync()
+  .filter((file) => file.endsWith(BINARY_NAME))?.[0];
+
+console.log(`binaryPath: ${binaryPath}`);
 
 const getBunBinPath = () => {
   return join(
@@ -37,15 +44,15 @@ export class DiscordRPC {
     try {
       // if dist file, check if binary exist
       if (__filename.endsWith("dist/index.js")) {
-        accessSync(join(distDir, BINARY_NAME));
+        accessSync(binaryPath);
         hasBinary = true;
       }
     } catch {}
 
     if (!hasBinary && process.env.BUN_INSTALL) {
       await new Promise((resolve) =>
-        spawn(getBunBinPath(), ["x", "rimraf", join(distDir, BINARY_NAME)], {
-          cwd: pkgDir,
+        spawn(getBunBinPath(), ["x", "rimraf", binaryPath], {
+          cwd: discordRPCDir,
           shell: true,
           stdio: "ignore",
           windowsHide: true,
@@ -54,7 +61,7 @@ export class DiscordRPC {
 
       await new Promise((resolve) =>
         spawn(getBunBinPath(), ["run", "build:bin"], {
-          cwd: pkgDir,
+          cwd: discordRPCDir,
           shell: true,
           stdio: "ignore",
           windowsHide: true,
@@ -63,8 +70,7 @@ export class DiscordRPC {
     }
 
     if (!this.isRPCReady) {
-      const child = spawn(`./${BINARY_NAME}`, {
-        cwd: distDir,
+      const child = spawn(binaryPath, {
         stdio: [null, "pipe", "pipe"],
         windowsHide: true,
       });

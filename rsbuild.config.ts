@@ -108,11 +108,6 @@ export default defineConfig(({ env }) => {
         /dlopen\(['"]video\.node['"]\s*,\s*\{\s*cwd:\s*join\(import\.meta\.dirname, ['"]..\/['"]\)/,
         `dlopen('${isProdBuild ? "win-screen-resolution.node" : "video.node"}', { cwd: ${isProdBuild ? "import.meta.dirname" : `join(import.meta.dirname, '${path.relative(ELECTRON_OUT_DIR, path.resolve(path.dirname(videoNodePath), "..", "..")).replace(/\\/g, "/")}')`}`,
       );
-      // fix discord-rpc > distDir path for discord-rpc-bun binary
-      code = code.replace(
-        /distDir\s*=\s*join\(pkgDir, ['"]dist['"]\)/,
-        `distDir = ${isProdBuild ? "import.meta.dirname" : `join(import.meta.dirname, "..", "..", '${path.relative(ELECTRON_OUT_DIR, path.dirname(discordRpcPath)).replace(/\\/g, "/")}')`}`,
-      );
 
       return code;
     },
