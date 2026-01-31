@@ -89,7 +89,7 @@ export default defineConfig(({ env }) => {
                 }))
               : [
                   {
-                    from: discordRpcPath.replace("[arch]", ""),
+                    from: discordRpcPath.replace("-[arch]", ""),
                     to: path.resolve(process.cwd(), ELECTRON_OUT_DIR),
                   },
                 ]),
