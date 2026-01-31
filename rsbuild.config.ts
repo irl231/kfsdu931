@@ -27,7 +27,7 @@ const videoNodePath = path.posix.join(
   "video.node",
 );
 
-const discordRpcBinaryName = `discord-rpc-bun${process.platform === "win32" ? ".exe" : ""}`;
+const discordRpcBinaryName = `discord-rpc-bun-[arch]${process.platform === "win32" ? ".exe" : ""}`;
 const discordRpcPath = path.posix.join(
   path
     .resolve(path.dirname(require.resolve("@lazuee/discord-rpc")), "..")
@@ -82,10 +82,10 @@ export default defineConfig(({ env }) => {
                 ]
               : []),
 
-            {
-              from: discordRpcPath,
+            ...["arm64", "x64"].map((arch) => ({
+              from: discordRpcPath.replace("[arch]", arch),
               to: path.resolve(process.cwd(), ELECTRON_OUT_DIR),
-            },
+            })),
           ],
         }),
       ]);

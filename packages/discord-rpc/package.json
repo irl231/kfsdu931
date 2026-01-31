@@ -22,8 +22,9 @@
   "scripts": {
     "preinstall": "bun run build",
     "prepublish": "bun run build",
-    "build": "rm -rf dist && bun x tsc && bun run build:bin",
-    "build:bin": "bun build --compile --minify --bytecode --entrypoints src/discord-rpc/index.ts --outfile dist/discord-rpc-bun --target bun"
+    "build": "rm -rf dist && bun x tsc && bun run build:bin:platform",
+    "build:bin": "bun build --compile --minify --bytecode --entrypoints src/discord-rpc/index.ts",
+    "build:bin:platform": "bun ./scripts/build.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
