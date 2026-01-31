@@ -38,7 +38,6 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
-        pnpm install --frozen-lockfile --loglevel error
+        pnpm install --frozen-lockfile --prefer-offline --loglevel error
       env:
         HUSKY: "0"
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
