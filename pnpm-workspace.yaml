@@ -13,7 +13,6 @@ onlyBuiltDependencies:
   - esbuild
   - sharp
   - win-screen-resolution
-  - discord-rpc-new
 
 preferWorkspacePackages: true
 

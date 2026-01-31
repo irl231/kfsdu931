@@ -4,9 +4,9 @@ import { createConnection, type Socket } from "node:net";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ActivityPayload } from "discord-rpc-new";
 import { fdir } from "fdir";
 import { RPC_PORT } from "./constants";
+import type { ActivityPayload } from "./discord-rpc/types";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,7 +30,7 @@ const getBunBinPath = () => {
   );
 };
 
-export type { ActivityPayload } from "discord-rpc-new";
+export type { ActivityPayload } from "./discord-rpc/types";
 
 export class DiscordRPC {
   private socket: Socket | null = null;

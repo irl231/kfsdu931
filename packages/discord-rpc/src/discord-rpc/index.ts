@@ -1,13 +1,9 @@
 import type { Socket } from "node:net";
-import {
-  type ActivityPayload,
-  Client,
-  Event,
-  type ReadyResponse,
-} from "discord-rpc-new";
 import { RPC_PORT } from "../constants";
 import { deepClone, sortKeys } from "../utils";
+import { Client } from "./client";
 import { send } from "./send";
+import { type ActivityPayload, Event, type ReadyResponse } from "./types";
 
 const RECONNECT_CONFIG = {
   initialDelay: 1000, // 1 second

@@ -64,7 +64,6 @@
   },
   "pnpm": {
     "overrides": {
-      "discord-rpc-new": "github:lazuee/discord-rpc-new#main",
       "undici": "^5.29.0"
     },
     "onlyBuiltDependencies": [
@@ -74,9 +73,6 @@
       "esbuild",
       "sharp",
       "win-screen-resolution"
-    ],
-    "ignoredBuiltDependencies": [
-      "discord-rpc-new"
     ]
   }
 }
