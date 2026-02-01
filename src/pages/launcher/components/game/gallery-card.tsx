@@ -110,8 +110,14 @@ function GalleryCardComponent({
       <div
         className={`absolute mix-blend-multiply inset-0 rounded-xl bg-app-accent duration-500 pointer-events-none ${showActiveState ? "opacity-20" : "opacity-0"}`}
       />
-      <div
-        className={`absolute mix-blend-overlay inset-0 rounded-xl m-2 border border-white duration-500 pointer-events-none ${showActiveState ? "opacity-80" : "opacity-0"}`}
+      <motion.div
+        initial={{ opacity: 0, scale: 1 }}
+        animate={{
+          opacity: showActiveState ? 0.8 : 0,
+          scale: showActiveState ? 0.98 : 1,
+        }}
+        transition={{ duration: 0.5 }}
+        className={`absolute mix-blend-overlay inset-0 rounded-xl border border-white duration-500 pointer-events-none`}
       />
 
       <div className="absolute bottom-0 left-0 w-full p-5 z-10 flex flex-col justify-end items-start">
