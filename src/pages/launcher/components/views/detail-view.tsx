@@ -120,7 +120,7 @@ function DetailViewComponent({
                 <div className="absolute inset-0 z-0 rounded-2xl bg-primary border-2 border-white/10"></div>
               </motion.button>
             </div>
-            <div className="h-16 flex items-center gap-2 bg-zinc-900 rounded-2xl px-2 border-2 border-zinc-800 focus-within-dashed-ring">
+            <div className="h-16 flex items-center gap-2.5 bg-zinc-900 rounded-2xl px-2 border-2 border-zinc-800 focus-within-dashed-ring">
               <ToolBtn
                 icon={<IconWorld size={18} />}
                 tooltip="Site"

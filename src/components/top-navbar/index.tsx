@@ -111,13 +111,13 @@ export const TopNavbar = ({
           <button
             type="button"
             onClick={handleSettings}
-            className="flex-shrink-0 flex items-center justify-center mb-2 mr-2"
+            className="flex-shrink-0 flex items-center justify-center mb-2 mr-2 outline-none group"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
             aria-label="Open settings"
           >
             <IconSettings
               size={18}
-              className="text-app-text-primary/30 hover:text-app-accent transition-transform duration-500 ease-in-out hover:rotate-180 cursor-pointer outline-none"
+              className="text-app-text-primary/30 hover:text-app-accent transition-transform duration-500 ease-in-out hover:rotate-180 cursor-pointer outline-none group-focus-visible:text-app-accent group-focus-visible:rotate-180"
             />
           </button>
         </div>

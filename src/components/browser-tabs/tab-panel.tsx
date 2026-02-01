@@ -1,7 +1,7 @@
 export const TabPanel = ({ isActive }: { isActive: boolean }) => {
   return (
     <div
-      className={`absolute z-10 top-0 left-0 w-full h-full min-w-[48px] max-h-[32px] rounded-t-[10px] ${isActive ? "bg-[#202224] z-30" : "bg-[#17191a]"} group-hover:bg-[#292c2f] group-hover:z-20`}
+      className={`absolute z-10 top-0 left-0 w-full h-full min-w-[48px] max-h-[32px] rounded-t-[10px] ${isActive ? "bg-[#202224] z-30" : "bg-[#17191a]"} group-hover:bg-[#292c2f] group-hover:z-20 group-focus-visible:bg-[#292c2f] group-focus-visible:z-20`}
     >
       {/** biome-ignore lint/a11y/noSvgWithoutTitle: suppress warning */}
       <svg

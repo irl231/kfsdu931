@@ -23,7 +23,7 @@ function ToggleSwitchComponent({
       role="switch"
       aria-checked={checked}
       aria-label={label ? `Toggle ${label}` : "Toggle option"}
-      className={`w-11 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 relative flex items-center focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-app-accent outline-none ${
+      className={`w-11 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 relative flex items-center focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-app-accent focus-visible:ring-offset-app-primary outline-none ${
         checked ? "bg-app-accent" : "bg-white/10"
       }`}
     >
