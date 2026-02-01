@@ -124,14 +124,14 @@
   }
 
   /* Dashed focus ring when any child is focused */
-  .focus-within-dashed-ring {
+  .focus-dashed-ring-2 {
     position: relative;
   }
 
-  .focus-within-dashed-ring:focus-within::after {
+  .focus-dashed-ring-2:focus::after {
     content: "";
     position: absolute;
-    inset: -9px;
+    inset: -8px;
     border: 2px dashed var(--accent);
     border-radius: 1.4rem;
     pointer-events: none;

@@ -17,10 +17,11 @@ export const TabItem = ({
     isAudible?: boolean;
     isMuted?: boolean;
   };
+  index: number;
   isActive: boolean;
   onClick: () => void;
-  onClose: (e: React.MouseEvent) => void;
-  onToggleMute?: (e: React.MouseEvent) => void;
+  onClose: (e: React.MouseEvent | React.KeyboardEvent) => void;
+  onToggleMute?: (e: React.MouseEvent | React.KeyboardEvent) => void;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -41,25 +42,20 @@ export const TabItem = ({
   const showAudioToggle = hasAudioActivity && (isMuted || isHovered);
 
   return (
-    <div
-      role="tab"
-      tabIndex={isActive ? 0 : -1}
+    <button
+      type="button"
+      tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      aria-selected={isActive}
       aria-label={`${tab.title}${isActive ? " (current tab)" : ""}${isMuted ? " (muted)" : isAudible ? " (playing audio)" : ""}`}
-      aria-controls={`tabpanel-${tab.id}`}
-      id={`tab-${tab.id}`}
-      className={`${isMac ? "h-[32px]" : "h-[26px]"} relative group w-full select-none cursor-pointer outline-none transition-colors`}
+      className={`${isMac ? "h-[32px]" : "h-[26px]"} relative group w-full outline-none`}
     >
-      <TabPanel isActive={isActive} />
+      <TabPanel
+        isActive={isActive}
+        className="group-focus-visible:bg-[#292c2f] group-focus-visible:z-30"
+        fill="group-focus-visible:fill-[#292c2f]"
+      />
       <div className="relative z-50 h-full flex items-center justify-between gap-2 pl-3 pr-2 py-1.5 transition-colors">
         <div className="flex items-center gap-2 overflow-hidden flex-1">
           <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center overflow-hidden">
@@ -83,6 +79,6 @@ export const TabItem = ({
           <TabCloseBtn accent={tab.accent} onClick={onClose} />
         </div>
       </div>
-    </div>
+    </button>
   );
 };

@@ -1,11 +1,19 @@
-export const TabPanel = ({ isActive }: { isActive: boolean }) => {
+export const TabPanel = ({
+  isActive,
+  className,
+  fill,
+}: {
+  isActive: boolean;
+  className?: string;
+  fill?: string;
+}) => {
   return (
     <div
-      className={`absolute z-10 top-0 left-0 w-full h-full min-w-[48px] max-h-[32px] rounded-t-[10px] ${isActive ? "bg-[#202224] z-30" : "bg-[#17191a]"} group-hover:bg-[#292c2f] group-hover:z-20 group-focus-visible:bg-[#292c2f] group-focus-visible:z-20`}
+      className={`absolute z-10 top-0 left-0 w-full h-full min-w-[48px] max-h-[32px] rounded-t-[10px] ${isActive ? "bg-[#202224] z-30" : "bg-[#17191a]"} group-hover:bg-[#292c2f] group-hover:z-20 ${className}`}
     >
       {/** biome-ignore lint/a11y/noSvgWithoutTitle: suppress warning */}
       <svg
-        className={`absolute ${isActive ? "fill-[#202224]" : "fill-[#17191a]"} group-hover:fill-[#292c2f] w-[21px] top-0 right-[-11px]`}
+        className={`absolute ${isActive ? "fill-[#202224]" : "fill-[#17191a]"} group-hover:fill-[#292c2f] ${fill} w-[21px] top-0 right-[-11px]`}
         xmlns="http://www.w3.org/2000/svg"
         width="100%"
         height="100%"
@@ -25,7 +33,7 @@ export const TabPanel = ({ isActive }: { isActive: boolean }) => {
       </svg>
       {/** biome-ignore lint/a11y/noSvgWithoutTitle: suppress warning */}
       <svg
-        className={`absolute ${isActive ? "fill-[#202224]" : "fill-[#17191a]"} group-hover:fill-[#292c2f] w-[21px] top-0 left-[-9px]`}
+        className={`absolute ${isActive ? "fill-[#202224]" : "fill-[#17191a]"} group-hover:fill-[#292c2f] ${fill} w-[21px] top-0 left-[-9px]`}
         xmlns="http://www.w3.org/2000/svg"
         width="100%"
         height="100%"

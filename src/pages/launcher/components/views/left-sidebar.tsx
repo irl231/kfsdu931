@@ -48,7 +48,10 @@ export function LeftSidebar({
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className="absolute flex z-10 w-[72px] h-full"
     >
-      <div className="absolute h-full w-48 pointer-events-none">
+      <div
+        className="absolute h-full w-48 pointer-events-none"
+        style={{ left: 72 }}
+      >
         <div className="absolute inset-0 bg-gradient-to-r from-app-primary from-0% via-app-primary/80 via-80% to-transparent to-100%" />
       </div>
       <div className="relative flex flex-col w-full items-center pt-3 pb-6 bg-app-primary z-10">

@@ -97,18 +97,13 @@ export class Client extends EventEmitter {
    * Logs in to Discord and establishes the IPC connection.
    * @returns Promise that resolves when login is successful
    */
-  async login({
-    clientId,
-    clientSecret,
-    scopes,
-    accessToken,
-  }: {
+  async login(opts: {
     clientId: string;
     clientSecret?: string;
     scopes?: string[];
     accessToken?: string;
   }): Promise<ReadyResponse> {
-    this.clientId = clientId;
+    this.clientId = opts.clientId;
 
     await this.connection.connect();
 
@@ -119,7 +114,10 @@ export class Client extends EventEmitter {
         resolve(data);
       });
 
-      this.connection.send(OpCode.HANDSHAKE, { v: 1, client_id: clientId });
+      this.connection.send(OpCode.HANDSHAKE, {
+        v: 1,
+        client_id: opts.clientId,
+      });
     });
   }
 

@@ -73,7 +73,7 @@ function SidebarGameItemComponent({
         />
       )}
       <div
-        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 overflow-hidden relative bg-cover bg-center bg-no-repeat ring-2 ring-transparent ${baseClass} group-focus:ring-app-accent group-focus:ring-offset-2 group-focus:ring-offset-app-primary ${!game.image.icon && "bg-app-secondary"}`}
+        className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden relative bg-cover bg-center bg-no-repeat ring-2 ring-transparent ${baseClass} group-focus:ring-app-accent group-focus:ring-offset-[2.5px] group-focus:ring-offset-app-primary ${!game.image.icon && "bg-app-secondary"}`}
       >
         {game.image.icon ? (
           <motion.div

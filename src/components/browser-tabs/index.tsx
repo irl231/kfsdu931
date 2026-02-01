@@ -74,7 +74,7 @@ export const BrowserTabsList = ({
         }}
       >
         <AnimatePresence initial={false}>
-          {tabs.map((tab) => (
+          {tabs.map((tab, index) => (
             <Reorder.Item
               key={tab.id}
               value={tab}
@@ -114,6 +114,7 @@ export const BrowserTabsList = ({
             >
               <TabItem
                 tab={tab}
+                index={index}
                 isActive={activeTabId === tab.id}
                 onClick={() => {
                   if (!isDraggingRef.current) {

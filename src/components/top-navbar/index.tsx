@@ -76,13 +76,19 @@ export const TopNavbar = ({
             }}
             aria-label="Go to launcher home"
             aria-pressed={activeTopTab === "launcher"}
-            className={`${isMac ? "h-[32px]" : "h-[26px]"} group relative flex-shrink-0 focus-visible:outline-2 focus-visible:outline-app-accent focus-visible:outline-offset-2 focus-visible:rounded transition-colors ${activeTopTab === "launcher" ? "text-app-text-primary" : "text-app-text-primary/40 hover:text-app-accent"}`}
+            className={`${isMac ? "h-[32px]" : "h-[26px]"} group relative flex-shrink-0 outline-none`}
           >
-            <TabPanel isActive={activeTopTab === "launcher"} />
+            <TabPanel
+              isActive={activeTopTab === "launcher"}
+              className="group-focus-visible:bg-[#292c2f] group-focus-visible:z-30"
+              fill="group-focus-visible:fill-[#292c2f]"
+            />
             <div
-              className={`relative z-30 flex items-center justify-center px-4 py-1.5 cursor-pointer transition-colors`}
+              className={`relative z-30 flex items-center justify-center px-4 py-1.5 cursor-pointer ${activeTopTab === "launcher" ? "text-app-accent" : "text-app-text-primary/40 hover:text-app-accent"} group-focus-visible:text-app-accent`}
             >
-              <span className="text-xs truncate capitalize">Home</span>
+              <span className="text-xs font-medium truncate capitalize">
+                Home
+              </span>
             </div>
           </button>
           <div

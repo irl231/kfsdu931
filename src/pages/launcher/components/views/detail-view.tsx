@@ -120,17 +120,15 @@ function DetailViewComponent({
                 <div className="absolute inset-0 z-0 rounded-2xl bg-primary border-2 border-white/10"></div>
               </motion.button>
             </div>
-            <div className="h-16 flex items-center gap-2.5 bg-zinc-900 rounded-2xl px-2 border-2 border-zinc-800 focus-within-dashed-ring">
+            <div className="h-16 flex items-center gap-3 bg-zinc-900 rounded-2xl px-3 border-2 border-zinc-800 outline-none focus-dashed-ring-2">
               <ToolBtn
                 icon={<IconWorld size={18} />}
                 tooltip="Site"
-                ariaLabel="Visit official website"
                 href={game.url.home}
               />
               <ToolBtn
                 icon={<IconShare size={18} />}
                 tooltip="Social Info"
-                ariaLabel="View social information"
                 onClick={onToggleSidebar}
               />
             </div>

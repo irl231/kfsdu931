@@ -4,18 +4,11 @@ import { memo, useCallback } from "react";
 interface ToolBtnProps {
   icon: ReactNode;
   tooltip?: string;
-  ariaLabel?: string;
   href?: string;
   onClick?: () => void;
 }
 
-function ToolBtnComponent({
-  icon,
-  tooltip,
-  ariaLabel,
-  href,
-  onClick,
-}: ToolBtnProps) {
+function ToolBtnComponent({ icon, tooltip, href, onClick }: ToolBtnProps) {
   const handleClick = useCallback(() => {
     onClick?.();
     if (href) window.open(href, "_blank");
@@ -27,14 +20,13 @@ function ToolBtnComponent({
   return (
     <button
       type="button"
-      className={`w-11 h-11 rounded-xl backdrop-blur-md flex items-center justify-center transition-all group relative outline-none ring-2 ring-zinc-800 focus:ring-zinc-700 ${baseClass}`}
+      className={`w-10 h-10 rounded-lg flex items-center justify-center group relative outline-none ring-2 ring-zinc-800 focus:ring-zinc-700 focus:ring-offset-2 focus:ring-offset-zinc-900 ${baseClass}`}
       onClick={handleClick}
-      aria-label={ariaLabel || tooltip}
       title={tooltip}
     >
       {icon}
       {tooltip && (
-        <span className="absolute bg-app-primary -top-10 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 pointer-events-none text-app-text-primary z-50">
+        <span className="absolute bg-app-primary -top-11 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 pointer-events-none text-app-text-primary z-50">
           {tooltip}
         </span>
       )}

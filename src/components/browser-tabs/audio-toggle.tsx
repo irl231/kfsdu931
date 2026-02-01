@@ -8,17 +8,24 @@ export const AudioToggle = ({
 }: {
   accent: string;
   isMuted: boolean;
-  onClick: (e: React.MouseEvent) => void;
+  onClick: (e: React.MouseEvent | React.KeyboardEvent) => void;
   className?: string;
 }) => {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={-1}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick(e);
+        }
+      }}
       onPointerDown={(e) => e.stopPropagation()}
       aria-label={isMuted ? "Unmute tab" : "Mute tab"}
       aria-pressed={isMuted}
-      className={`p-2 outline-none bg-transparent flex items-center justify-center ${className}`}
+      className={`p-2 outline-none bg-transparent flex items-center justify-center cursor-pointer ${className}`}
       style={{ color: accent }}
     >
       {isMuted ? (
@@ -26,6 +33,6 @@ export const AudioToggle = ({
       ) : (
         <IconVolume size={12} strokeWidth={2.5} className="flex-shrink-0" />
       )}
-    </button>
+    </div>
   );
 };
