@@ -76,9 +76,7 @@ function GalleryCardComponent({
       key={key}
       data-active={showActiveState}
     >
-      <div
-        className={`w-full h-full overflow-hidden rounded-xl bg-app-primary relative`}
-      >
+      <div className={`w-full h-full bg-app-primary relative`}>
         {game.image.background ? (
           <motion.img
             src={game.image.background}
@@ -92,7 +90,6 @@ function GalleryCardComponent({
             transition={{
               opacity: { duration: 0.5 },
               filter: { duration: 0.5 },
-              scale: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] },
             }}
             alt={game.name}
           />
@@ -104,28 +101,42 @@ function GalleryCardComponent({
       </div>
 
       <div className="absolute inset-0 bg-gradient-to-t from-app-primary from-5% to-transparent to-[100%] transition-opacity duration-300 pointer-events-none" />
-      <div
-        className={`absolute inset-0 mix-blend-lighten bg-gradient-to-t from-app-accent from-[-20%] to-transparent to-[60%] transition-opacity duration-500 pointer-events-none ${showActiveState ? "opacity-80" : "opacity-0"}`}
-      />
-      <div
-        className={`absolute mix-blend-multiply inset-0 rounded-xl bg-app-accent duration-500 pointer-events-none ${showActiveState ? "opacity-20" : "opacity-0"}`}
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showActiveState ? 0.8 : 0 }}
+        transition={{ duration: 0.5 }}
+        className={`absolute inset-0 mix-blend-lighten bg-gradient-to-t from-app-accent from-[-20%] to-transparent to-[60%] transition-opacity duration-500 pointer-events-none`}
       />
       <motion.div
-        initial={{ opacity: 0, scale: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showActiveState ? 0.2 : 0 }}
+        transition={{ duration: 0.5 }}
+        className={`absolute mix-blend-multiply inset-0 bg-app-accent duration-500 pointer-events-none`}
+      />
+      <motion.div
+        initial={{ opacity: 0, margin: 0 }}
         animate={{
           opacity: showActiveState ? 0.8 : 0,
-          scale: showActiveState ? 0.98 : 1,
+          margin: showActiveState ? "0.5rem" : 0,
         }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.3 }}
         className={`absolute mix-blend-overlay inset-0 rounded-xl border border-white duration-500 pointer-events-none`}
       />
 
       <div className="absolute bottom-0 left-0 w-full p-5 z-10 flex flex-col justify-end items-start">
-        <h3
-          className={`text-xl font-bold leading-none drop-shadow-md transition-all duration-300 ${showActiveState ? "text-white -translate-y-1" : "text-app-text-secondary"}`}
+        <motion.h3
+          layout
+          initial={{ opacity: 0, y: 1 }}
+          animate={{
+            opacity: showActiveState ? 1 : 0.8,
+            y: showActiveState ? -5 : 1,
+          }}
+          transition={{ duration: 0.2 }}
+          className={`text-xl font-bold leading-none transition-all duration-300 ${showActiveState ? "text-white" : "text-app-text-secondary"}`}
         >
           {game.name}
-        </h3>
+        </motion.h3>
       </div>
     </motion.button>
   );
