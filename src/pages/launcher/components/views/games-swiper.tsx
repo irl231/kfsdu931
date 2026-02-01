@@ -104,10 +104,10 @@ export function GamesSwiper({ onSelectGame }: GamesSwiperProps) {
   return (
     <div className="flex-shrink-0 w-full bg-app-primary border-t border-white/5 z-20 relative">
       {/* Left fade gradient */}
-      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 md:w-32 bg-gradient-to-r from-app-primary to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-app-primary to-transparent z-10 pointer-events-none" />
 
       {/* Right fade gradient */}
-      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 md:w-32 bg-gradient-to-l from-app-primary to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-app-primary to-transparent z-10 pointer-events-none" />
 
       <div className="w-full pt-4 sm:pt-6 md:pt-8 pb-6 sm:pb-8 md:pb-10 relative">
         <div

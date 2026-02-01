@@ -11,9 +11,6 @@ importers:
       '@fontsource/instrument-serif':
         specifier: ^5.2.8
         version: 5.2.8
-      '@fontsource/inter':
-        specifier: ^5.2.8
-        version: 5.2.8
       '@fontsource/iosevka-etoile':
         specifier: ^5.2.5
         version: 5.2.5
@@ -804,9 +801,6 @@ packages:
 
   '@fontsource/instrument-serif@5.2.8':
     resolution: {integrity: sha512-s+bkz+syj2rO00Rmq9g0P+PwuLig33DR1xDR8pTWmovH1pUjwnncrFk++q9mmOex8fUQ7oW80gPpPDaw7V1MMw==}
-
-  '@fontsource/inter@5.2.8':
-    resolution: {integrity: sha512-P6r5WnJoKiNVV+zvW2xM13gNdFhAEpQ9dQJHt3naLvfg+LkF2ldgSLiF4T41lf1SQCM9QmkqPTn4TH568IRagg==}
 
   '@fontsource/iosevka-etoile@5.2.5':
     resolution: {integrity: sha512-DaqaNB1G6qhGh+D+WxZUrln0UJmrM7qXgJgdeXm3U1ekcIph2aWPAcmI1edDj9FLkuGl2ZU9TYywIvzVF6lz0Q==}
@@ -4200,8 +4194,6 @@ snapshots:
     optional: true
 
   '@fontsource/instrument-serif@5.2.8': {}
-
-  '@fontsource/inter@5.2.8': {}
 
   '@fontsource/iosevka-etoile@5.2.5': {}
 

@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "@fontsource/instrument-serif": "^5.2.8",
-    "@fontsource/inter": "^5.2.8",
     "@fontsource/iosevka-etoile": "^5.2.5",
     "@lazuee/discord-rpc": "workspace:*",
     "@tabler/icons-react": "^3.36.1",
