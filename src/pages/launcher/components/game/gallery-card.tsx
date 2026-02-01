@@ -11,6 +11,7 @@ interface GalleryCardProps {
   className?: string;
   isActive?: boolean;
   onHoverChange?: (isHovered: boolean) => void;
+  tabIndex?: number;
 }
 
 function GalleryCardComponent({
@@ -21,6 +22,7 @@ function GalleryCardComponent({
   className,
   isActive = false,
   onHoverChange,
+  tabIndex = 0,
 }: GalleryCardProps) {
   const [hover, setHover] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -71,10 +73,11 @@ function GalleryCardComponent({
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[calc(50%-8px)] sm:max-w-none md:w-[calc(33.33%-11px)] xl:w-[calc(25%-12px)] aspect-[7/4] relative rounded-xl overflow-hidden cursor-pointer bg-app-secondary outline-none group text-left ${className}`}
+      className={`snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[calc(50%-8px)] sm:max-w-none md:w-[calc(33.33%-11px)] xl:w-[calc(25%-12px)] aspect-[7/4] relative rounded-xl overflow-hidden cursor-pointer bg-app-secondary outline-none group text-left focus:ring-2 focus:ring-app-accent focus:ring-offset-4 focus:ring-offset-app-primary focus:rounded-2xl ${className}`}
       aria-label={`View ${game.name} details`}
       key={key}
       data-active={showActiveState}
+      tabIndex={tabIndex}
     >
       <div className={`w-full h-full bg-app-primary relative`}>
         {game.image.background ? (

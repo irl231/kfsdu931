@@ -49,7 +49,7 @@ export function GalleryView({ appName, onSelectGame }: GalleryViewProps) {
             transition={{ delay: 0.2 }}
             className="absolute bottom-0 left-0 p-4 sm:p-6 md:p-10 max-w-4xl z-10"
           >
-            <h1 className="tracking-tight text-8xl xl:text-9xl font-title font-black text-white mb-4 leading-[0.9]">
+            <h1 className="text-stroke tracking-tight text-8xl xl:text-9xl font-title font-black text-white mb-4 leading-[0.9]">
               <span>{appName.slice(0, 2).toUpperCase()}</span>
               <span className="text-app-accent">
                 {appName.slice(2).toLowerCase()}

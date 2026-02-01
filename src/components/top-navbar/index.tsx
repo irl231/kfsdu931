@@ -57,7 +57,7 @@ export const TopNavbar = ({
   return (
     <nav className="relative flex flex-col z-30" aria-label="Main navigation">
       <div
-        className={`${isMac ? "h-[40px]" : "h-[33px]"} relative flex items-center pl-2 bg-app-primary`}
+        className={`${isMac ? "h-[40px]" : "h-[33px]"} relative flex items-center pl-2 bg-inherit`}
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
         <motion.div
@@ -82,7 +82,7 @@ export const TopNavbar = ({
             <div
               className={`relative z-30 flex items-center justify-center px-4 py-1.5 cursor-pointer transition-colors`}
             >
-              <span className="text-xs truncate">Launcher</span>
+              <span className="text-xs truncate capitalize">Home</span>
             </div>
           </button>
           <div

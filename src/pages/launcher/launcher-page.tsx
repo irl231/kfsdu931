@@ -108,7 +108,7 @@ export function LauncherPage() {
 
   return (
     <main
-      className="flex flex-col w-full h-screen font-sans text-app-text-primary select-none overflow-hidden relative bg-app-primary"
+      className="flex flex-col w-full h-screen font-sans text-app-text-primary select-none overflow-hidden relative bg-zinc-900"
       role="application"
       aria-label="Game Launcher"
     >
@@ -170,31 +170,6 @@ export function LauncherPage() {
 
               {/* Main Content */}
               <div className="relative h-full w-full">
-                {/* Background */}
-                <div className="bg-app-primary absolute inset-0 z-0">
-                  <AnimatePresence mode="wait">
-                    {viewMode === "detail" && selectedGameId && (
-                      <motion.div
-                        key={selectedGameId}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="absolute inset-0"
-                      >
-                        <BackgroundImage src={activeGame.image.background} />
-                        <div
-                          className="absolute inset-0"
-                          style={{ left: "72px" }}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-app-primary via-app-primary/80 to-transparent" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-app-primary via-app-primary/40 to-transparent" />
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
                 <div className="relative h-full w-full flex flex-row">
                   <motion.div
                     initial={false}
@@ -263,6 +238,27 @@ export function LauncherPage() {
                       </motion.div>
                     ))}
                   </div>
+                </div>
+                {/* Background */}
+                <div className="bg-app-primary absolute inset-0 z-0">
+                  <AnimatePresence mode="wait">
+                    {viewMode === "detail" && selectedGameId && (
+                      <motion.div
+                        key={selectedGameId}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute inset-0"
+                      >
+                        <BackgroundImage src={activeGame.image.background} />
+                        <div className="absolute inset-0">
+                          <div className="absolute inset-0 bg-gradient-to-r from-app-primary via-app-primary/80 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-app-primary via-app-primary/40 to-transparent" />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </div>

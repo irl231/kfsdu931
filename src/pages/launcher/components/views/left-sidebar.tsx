@@ -42,29 +42,33 @@ export function LeftSidebar({
 
   return (
     <motion.div
-      initial={{ x: -80 }}
-      animate={{ x: isVisible ? 0 : -80 }}
+      initial={{ x: -72 }}
+      animate={{ x: isVisible ? 0 : -72 }}
       exit={{ x: -80 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute flex z-20 w-[72px] h-full"
+      className="absolute flex z-10 w-[72px] h-full"
     >
-      <div className="flex flex-col w-full items-center pt-3 pb-6 bg-app-primary">
+      <div className="absolute h-full w-48 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-r from-app-primary from-0% via-app-primary/80 via-80% to-transparent to-100%" />
+      </div>
+      <div className="relative flex flex-col w-full items-center pt-3 pb-6 bg-app-primary z-10">
         <button
           type="button"
           className="mb-3 flex-shrink-0 flex flex-col items-center gap-1 group cursor-pointer outline-none"
           onClick={onShowGallery}
         >
           <div
-            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 border border-white/5 ${
-              viewMode === "gallery"
-                ? "bg-app-accent text-black"
-                : "bg-white/5 text-app-text-primary/50 hover:bg-white/10 hover:text-app-text-primary"
-            }`}
+            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 border-2 border-white/5
+              group-focus:ring-2 group-focus:ring-zinc-700 group-focus:ring-offset-2 group-focus:ring-offset-app-primary
+              ${
+                viewMode === "gallery"
+                  ? "bg-app-accent text-black group-focus:ring-offset-app-primary group-focus:ring-offset-2 group-focus:ring-emerald-400"
+                  : "bg-white/5 text-app-text-primary/50 hover:bg-white/10 hover:text-app-text-primary"
+              }`}
           >
             <IconLayoutGrid size={20} />
           </div>
         </button>
-
         <div className="flex-1 w-full relative overflow-hidden flex flex-col min-h-0">
           <div
             ref={sidebarRef}

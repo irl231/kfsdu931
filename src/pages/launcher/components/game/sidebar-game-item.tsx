@@ -19,6 +19,7 @@ function SidebarGameItemComponent({
   elementId,
 }: SidebarGameItemProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
     if (!game.image.icon) {
@@ -40,13 +41,20 @@ function SidebarGameItemComponent({
 
   const baseClass = isSelected
     ? "shadow-[0_0_0_2px] shadow-app-accent opacity-100"
-    : "hover:ring-white/40 opacity-50 hover:opacity-100 grayscale hover:grayscale-0";
+    : "hover:ring-white/40";
+
+  // Determine if grayscale should be disabled
+  const shouldShowColor = isSelected || isActive;
 
   return (
     <motion.button
       id={elementId}
       type="button"
       onClick={onClick}
+      onMouseEnter={() => setIsActive(true)}
+      onMouseLeave={() => setIsActive(false)}
+      onFocus={() => setIsActive(true)}
+      onBlur={() => setIsActive(false)}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{
@@ -65,16 +73,18 @@ function SidebarGameItemComponent({
         />
       )}
       <div
-        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 overflow-hidden relative bg-cover bg-center bg-no-repeat ring-1 ring-transparent ${baseClass} ${!game.image.icon && "bg-app-secondary"}`}
+        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 overflow-hidden relative bg-cover bg-center bg-no-repeat ring-2 ring-transparent ${baseClass} group-focus:ring-app-accent group-focus:ring-offset-2 group-focus:ring-offset-app-primary ${!game.image.icon && "bg-app-secondary"}`}
       >
         {game.image.icon ? (
           <motion.div
             className="w-full h-full bg-cover bg-center"
             style={{ backgroundImage: `url(${game.image.icon})` }}
-            initial={{ opacity: 0, filter: "blur(5px)" }}
+            initial={{ opacity: 0, filter: "blur(5px) grayscale(100%)" }}
             animate={{
-              opacity: imgLoaded ? 1 : 0,
-              filter: imgLoaded ? "blur(0px)" : "blur(5px)",
+              opacity: imgLoaded ? (shouldShowColor ? 1 : 0.5) : 0,
+              filter: imgLoaded
+                ? `blur(0px) grayscale(${shouldShowColor ? 0 : 100}%)`
+                : "blur(5px) grayscale(100%)",
             }}
             transition={{ duration: 0.4 }}
           />

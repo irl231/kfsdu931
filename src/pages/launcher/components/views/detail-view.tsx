@@ -81,7 +81,7 @@ function DetailViewComponent({
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <h1 className="tracking-tight text-8xl xl:text-9xl font-title font-black text-white mb-4 leading-[0.9]">
+          <h1 className="text-stroke tracking-tight text-8xl xl:text-9xl font-title font-black text-white mb-4 leading-[0.9]">
             {game.name}
           </h1>
 
@@ -95,22 +95,32 @@ function DetailViewComponent({
                 isLoading ? "cursor-wait inline-block" : "inline-block"
               }
             >
-              <button
+              <motion.button
                 type="button"
                 onClick={onPlay}
                 aria-busy={isLoading}
                 disabled={isLoading}
-                className={`${isLoading ? "pointer-events-none" : "pointer-events-auto"} h-14 pl-6 pr-8 rounded-full flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl hover:brightness-110 outline-none ring-0 bg-app-accent disabled:opacity-75 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-app-accent`}
+                initial="rest"
+                whileHover="hover"
+                animate="rest"
+                className={`${isLoading ? "pointer-events-none" : "pointer-events-auto"} group relative flex items-center disabled:opacity-75 outline-none focus-dashed-ring`}
               >
-                {renderPlayButtonIcon()}
-                <div className="flex flex-col items-start">
-                  <span className="text-black font-extrabold text-lg leading-none">
+                {/** when button is hover, this element y pos should be -10 */}
+                <motion.div
+                  className="relative z-10 h-16 pl-6 pr-8 flex items-center gap-3 rounded-2xl group-hover:brightness-110 outline-none ring-0 bg-app-accent"
+                  variants={{ rest: { y: 0 }, hover: { y: -10 } }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {renderPlayButtonIcon()}
+                  <span className="text-black font-bold text-lg leading-none">
                     {getButtonLabel()}
                   </span>
-                </div>
-              </button>
+                </motion.div>
+                {/** this is the background of the button like a shadow that stay still. */}
+                <div className="absolute inset-0 z-0 rounded-2xl bg-primary border-2 border-white/10"></div>
+              </motion.button>
             </div>
-            <div className="flex gap-2">
+            <div className="h-16 flex items-center gap-2 bg-zinc-900 rounded-2xl px-2 border-2 border-zinc-800 focus-within-dashed-ring">
               <ToolBtn
                 icon={<IconWorld size={18} />}
                 tooltip="Site"
